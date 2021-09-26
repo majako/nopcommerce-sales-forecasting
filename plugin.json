@@ -1,0 +1,11 @@
+{
+  "Group": "Misc",
+  "FriendlyName": "Sales Forecasting",
+  "SystemName": "Misc.SalesForecasting",
+  "Version": "1.00",
+  "SupportedVersions": [ "4.20" ],
+  "Author": "Majako AB, Martin Gustafsson",
+  "DisplayOrder": 1,
+  "FileName": "Majako.Plugin.Misc.SalesForecasting.dll",
+  "Description": ""
+}
