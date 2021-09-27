@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFrameworks>netcoreapp3.1, netcoreapp2.1</TargetFrameworks>
+    <TargetFramework>netcoreapp2.2</TargetFramework>
     <Copyright>Copyright © Majako AB</Copyright>
     <Company>Majako AB</Company>
     <Authors>Majako AB</Authors>
@@ -16,6 +16,9 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\Libraries\Majako.Plugin.Common\Majako.Plugin.Common.csproj" />
+    <ProjectReference Include="..\Libraries\Nop.Core\Nop.Core.csproj" />
+    <ProjectReference Include="..\Presentation\Nop.Web\Nop.Web.csproj" />
     <ProjectReference Include="..\Libraries\Nop.Services\Nop.Services.csproj" />
     <ProjectReference Include="..\Presentation\Nop.Web.Framework\Nop.Web.Framework.csproj" />
   </ItemGroup>
@@ -24,9 +27,14 @@
     <None Update="plugin.json">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
-    <None Update="Views\Configure.cshtml">
+    <None Update="Views/*">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="Resources/*">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </EmbeddedResource>
   </ItemGroup>
 
   <Target Name="NopTarget" AfterTargets="Build">

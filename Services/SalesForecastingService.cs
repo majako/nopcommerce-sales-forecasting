@@ -4,10 +4,12 @@ using System.Linq;
 using System.Net.Http;
 using System.Net.Http.Headers;
 using Majako.Services.Extensions;
+using Majako.Plugin.Misc.SalesForecasting;
 using Nop.Core.Data;
 using Nop.Core.Domain.Catalog;
 using Nop.Core.Http;
 using Nop.Core.Domain.Orders;
+using Nop.Services.Configuration;
 using System.Threading.Tasks;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Serialization;
@@ -40,6 +42,7 @@ namespace Majako.Plugin.Misc.SalesForecasting.Services
 
         private const string BASE_URL = "https://majako-sales-forecasting.azurewebsites.net/";
         private readonly HttpClient _httpClient;
+        private readonly ISettingService _settingService;
         private readonly IRepository<Order> _orderRepository;
         private readonly IRepository<OrderItem> _orderItemRepository;
         private JsonSerializerSettings jsonSerializerSettings = new JsonSerializerSettings
@@ -52,16 +55,20 @@ namespace Majako.Plugin.Misc.SalesForecasting.Services
         public SalesForecastingService(
             IRepository<Order> orderRepository,
             IRepository<OrderItem> orderItemRepository,
+            ISettingService settingService,
             IHttpClientFactory httpClientFactory
         ){
             _httpClient = httpClientFactory.CreateClient(NopHttpDefaults.DefaultHttpClient);
             _httpClient.Timeout = TimeSpan.FromMinutes(30);
             _orderRepository = orderRepository;
+            _settingService = settingService;
             _orderItemRepository = orderItemRepository;
         }
 
         public async Task<ForecastResponse> ForecastAsync(int periodLength, IEnumerable<Product> products, DateTime? until = null)
         {
+            var settings = _settingService.LoadSetting<SalesForecastingPluginSettings>();
+
             var data = GetData(products);
             if (until != null)
                 data = data.Where(s => s.Created <= until);
