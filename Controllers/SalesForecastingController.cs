@@ -6,6 +6,7 @@ using Nop.Services.Configuration;
 using Nop.Services.Localization;
 using Nop.Services.Messages;
 using Nop.Services.Security;
+using Nop.Web.Areas.Admin.Models.Catalog;
 using Nop.Web.Framework;
 using Nop.Web.Framework.Controllers;
 using Nop.Web.Framework.Mvc.Filters;
@@ -41,6 +42,18 @@ namespace Majako.Plugin.Misc.SalesForecasting.Controllers
             var settings = _settingService.LoadSetting<SalesForecastingPluginSettings>();
 
             return View("~/Plugins/Misc.SalesForecasting/Views/Configure.cshtml", settings);
+        }
+
+        [AuthorizeAdmin]
+        [Area(AreaNames.Admin)]
+        public IActionResult Forecast()
+        {
+            if (!_permissionService.Authorize(StandardPermissionProvider.ManageOrders))
+                return AccessDeniedView();
+
+            return View(
+                "~/Plugins/Misc.SalesForecasting/Views/ProductSearch.cshtml",
+                new ProductSearchModel());
         }
 
         [HttpPost, ActionName("Configure")]
