@@ -1,0 +1,37 @@
+﻿@using Nop.Web.Framework.UI
+
+@{
+    ViewBag.Title = T("Majako.Plugin.Misc.SalesForecasting.SalesForecasting").Text;
+    Html.SetActiveMenuItemSystemName("Sales.SalesForecasting");
+    Layout = "~/Areas/Admin/Views/Shared/_AdminLayout.cshtml";
+    var productSearchModel = inventoryManagementModelFactory.PrepareProductSearchModel(new ProductSearchModel());
+    var productSearchPanelId = System.Guid.NewGuid();
+}
+
+<div class="content-header clearfix">
+    <h1 class="pull-left">
+        @T("Majako.Plugin.Misc.SalesForecasting.SalesForecasting")
+    </h1>
+</div>
+
+<div class="content">
+    <div class="panel-group">
+        <div class="panel panel-default">
+            <div class="panel-body" id="@productSearchPanelId">
+                @await Html.PartialAsync("ProductSearch.cshtml", productSearchModel)
+            </div>
+            @* <div class="panel-body" id="@selectionPanelId">
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <div class="col-md-8 col-md-offset-4">
+                            <button type="button" class="btn bg-olive" onclick="export_exportCsv()">
+                                <i class="fa fa-download"></i>
+                                @T("Majako.Plugin.Misc.InventoryManagement.ProductExport.ExportProductsFromCsvButton")
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div> *@
+        </div>
+    </div>
+</div>

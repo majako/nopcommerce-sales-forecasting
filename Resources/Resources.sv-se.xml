@@ -3,4 +3,7 @@
     <LocaleResource Name="Majako.Plugin.Misc.SalesForecasting.ApiKey">
         <Value>API-nyckel</Value>
     </LocaleResource>
+    <LocaleResource Name="Majako.Plugin.Misc.SalesForecasting.SalesForecasting">
+        <Value>Försäljningsprognoser</Value>
+    </LocaleResource>
 </Language>

@@ -51,9 +51,7 @@ namespace Majako.Plugin.Misc.SalesForecasting.Controllers
             if (!_permissionService.Authorize(StandardPermissionProvider.ManageOrders))
                 return AccessDeniedView();
 
-            return View(
-                "~/Plugins/Misc.SalesForecasting/Views/ProductSearch.cshtml",
-                new ProductSearchModel());
+            return View("~/Plugins/Misc.SalesForecasting/Views/Forecast.cshtml", null);
         }
 
         [HttpPost, ActionName("Configure")]
