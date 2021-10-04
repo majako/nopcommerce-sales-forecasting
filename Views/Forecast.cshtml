@@ -1,11 +1,22 @@
 ﻿@using Nop.Web.Framework.UI
+@using Nop.Web.Areas.Admin.Models.Catalog
+@inject Nop.Web.Areas.Admin.Factories.IProductModelFactory productModelFactory
+@model Majako.Plugin.Misc.SalesForecasting.Models.ForecastModel
 
 @{
     ViewBag.Title = T("Majako.Plugin.Misc.SalesForecasting.SalesForecasting").Text;
     Html.SetActiveMenuItemSystemName("Sales.SalesForecasting");
     Layout = "~/Areas/Admin/Views/Shared/_AdminLayout.cshtml";
-    var productSearchModel = inventoryManagementModelFactory.PrepareProductSearchModel(new ProductSearchModel());
+    var productSearchModel = productModelFactory.PrepareProductSearchModel(new ProductSearchModel());
     var productSearchPanelId = System.Guid.NewGuid();
+    var resultsPanelId = System.Guid.NewGuid();
+    var resultsId = System.Guid.NewGuid();
+    var headerId = System.Guid.NewGuid();
+    var prevBtnId = System.Guid.NewGuid();
+    var nextBtnId = System.Guid.NewGuid();
+    var submitBtnId = System.Guid.NewGuid();
+    var rangeId = System.Guid.NewGuid();
+    var pageSize = 20;
 }
 
 <div class="content-header clearfix">
@@ -15,23 +26,136 @@
 </div>
 
 <div class="content">
-    <div class="panel-group">
-        <div class="panel panel-default">
-            <div class="panel-body" id="@productSearchPanelId">
-                @await Html.PartialAsync("ProductSearch.cshtml", productSearchModel)
-            </div>
-            @* <div class="panel-body" id="@selectionPanelId">
-                <div class="col-md-6">
-                    <div class="form-group">
-                        <div class="col-md-8 col-md-offset-4">
-                            <button type="button" class="btn bg-olive" onclick="export_exportCsv()">
-                                <i class="fa fa-download"></i>
-                                @T("Majako.Plugin.Misc.InventoryManagement.ProductExport.ExportProductsFromCsvButton")
-                            </button>
+    <div class="form-horizontal">
+        <div class="panel-group">
+            <div class="panel panel-default">
+                <div class="panel-body" id="@productSearchPanelId">
+                    @await Html.PartialAsync("ProductSearch.cshtml", productSearchModel)
+
+                    <div class="panel-body row">
+                        <div class="col-md-5">
+                            <div class="form-group">
+                                <div class="col-md-4">
+                                    <nop-label asp-for="PeriodLength" />
+                                </div>
+                                <div class="col-md-8">
+                                    <nop-editor asp-for="PeriodLength" />
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
-            </div> *@
+                
+                <div id="@resultsPanelId" class="panel-body" hidden=true>
+                    <table style="border-spacing:10px; border-collapse: separate;">
+                        <thead>
+                            <tr>
+                                <th>@T("Majako.Plugin.Misc.SalesForecasting.ProductId")</th>
+                                <th id="@headerId">@T("Majako.Plugin.Misc.SalesForecasting.SKU")</th>
+                                <th>@T("Majako.Plugin.Misc.SalesForecasting.ProductName")</th>
+                                <th>@T("Majako.Plugin.Misc.SalesForecasting.Forecast")</th>
+                            </tr>
+                        </thead>
+                        <tbody id="@resultsId">
+                        </tbody>
+                    </table>
+                    <div class="row" style="padding-bottom:40px">
+                        <div class="col-md-offset-6">
+                            <button id="@submitBtnId" type="button" class="btn btn-primary" onclick="salesForecast_submit()">
+                                @T("Majako.Plugin.Misc.SalesForecasting.Submit")
+                            </button>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-offset-4 col-md-2" id="@rangeId">
+                        </div>
+                        <div class="col-md-offset-6">
+                            <span id="@prevBtnId">
+                                <button type="button" class="btn btn-primary" onclick="salesForecast_previousPage()">
+                                    @T("Majako.Plugin.Misc.SalesForecasting.Previous")
+                                </button>
+                            </span>
+                            <span id="@nextBtnId" hidden=true>
+                                <button type="button" class="btn btn-primary" onclick="salesForecast_nextPage()">
+                                    @T("Majako.Plugin.Misc.SalesForecasting.Next")
+                                </button>
+                            </span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="panel-body">
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <div class="col-md-8 col-md-offset-4">
+                                <button type="button" class="btn bg-olive" onclick="salesForecast_submit()">
+                                    <i class="fa fa-download"></i>
+                                    @T("Majako.Plugin.Misc.SalesForecasting.SaveCsv")
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 </div>
+
+<script>
+    let salesForecast_results = [];
+    let salesForecast_startIndex = 0;
+
+    function salesForecast_submit() {
+        const data = {
+            productSearchModel: {
+                SearchProductName: $("#SearchProductName").val(),
+                SearchCategoryId: $("#SearchCategoryId option:selected").val(),
+                SearchIncludeSubCategories: $("#SearchIncludeSubCategories")[0].checked,
+                SearchManufacturerId: $("#SearchManufacturerId option:selected").val(),
+                SearchStoreId: $("#SearchStoreId option:selected").val(),
+                SearchProductTypeId: $("#SearchProductTypeId option:selected").val(),
+                SearchPublishedId: $("#SearchPublishedId option:selected").val()
+            },
+            period: $("#PeriodLength").val()
+        };
+        addAntiForgeryToken(data);
+        const productSearchPanel = document.getElementById('@productSearchPanelId');
+        productSearchPanel.hidden = true;
+        $.ajax({
+            cache: false,
+            type: 'POST',
+            data: data,
+            url: '@(Url.Action("PostForecast", "SalesForecasting"))',
+            complete: () => {
+                productSearchPanel.hidden = false;
+            },
+            success: r => {
+                console.log(r);
+                salesForecast_results = r;
+                document.getElementById('@resultsPanelId').hidden = false;
+                salesForecast_displayResultsPage(salesForecast_startIndex, @pageSize);
+            }
+        });
+    }
+
+    function salesForecast_displayResultsPage(start, count) {
+        const table = document.getElementById('@resultsId');
+        table.innerText = '';
+        const submitBtn = document.getElementById('@submitBtnId');
+        submitBtn.disabled = true;
+        salesForecast_results = {};
+        const requests = salesForecast_products.slice(start, start + count).map(item => {
+            const row = document.createElement('tr');
+            const label = document.createElement('td');
+            label.innerText = item.sku;
+            row.appendChild(label);
+            table.appendChild(row);
+            return salesForecast_classify(item.productId, item.classes, row);
+        });
+        Promise.allSettled(requests).then(() => submitBtn.disabled = false);
+        document.getElementById('@rangeId').innerText = `${start + 1}-${Math.min(start + count, salesForecast_products.length)} av ${salesForecast_products.length}`;
+        document.getElementById('@prevBtnId').hidden = start === 0;
+        document.getElementById('@nextBtnId').hidden = start + count >= salesForecast_products.length;
+    }
+
+</script>

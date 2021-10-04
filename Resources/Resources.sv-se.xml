@@ -6,4 +6,28 @@
     <LocaleResource Name="Majako.Plugin.Misc.SalesForecasting.SalesForecasting">
         <Value>Försäljningsprognoser</Value>
     </LocaleResource>
+    <LocaleResource Name="Majako.Plugin.Misc.SalesForecasting.SaveCsv">
+        <Value>Spara</Value>
+    </LocaleResource>
+    <LocaleResource Name="Majako.Plugin.Misc.SalesForecasting.Previous">
+        <Value>Föregående</Value>
+    </LocaleResource>
+    <LocaleResource Name="Majako.Plugin.Misc.SalesForecasting.Next">
+        <Value>Nästa</Value>
+    </LocaleResource>
+    <LocaleResource Name="Majako.Plugin.Misc.SalesForecasting.Submit">
+        <Value>Skicka</Value>
+    </LocaleResource>
+    <LocaleResource Name="Majako.Plugin.Misc.SalesForecasting.Sku">
+        <Value>Artikelnummer</Value>
+    </LocaleResource>
+    <LocaleResource Name="Majako.Plugin.Misc.SalesForecasting.ProductId">
+        <Value>ID</Value>
+    </LocaleResource>
+    <LocaleResource Name="Majako.Plugin.Misc.SalesForecasting.ProductName">
+        <Value>Namn</Value>
+    </LocaleResource>
+    <LocaleResource Name="Majako.Plugin.Misc.SalesForecasting.Prediction">
+        <Value>Prognos</Value>
+    </LocaleResource>
 </Language>

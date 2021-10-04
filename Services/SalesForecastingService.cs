@@ -5,8 +5,11 @@ using System.Net.Http;
 using System.Net.Http.Headers;
 using Nop.Core.Data;
 using Nop.Core.Http;
+using Nop.Core.Domain.Catalog;
 using Nop.Core.Domain.Orders;
+using Nop.Services.Catalog;
 using Nop.Services.Configuration;
+using Nop.Web.Areas.Admin.Models.Catalog;
 using System.Threading.Tasks;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Serialization;
@@ -30,9 +33,18 @@ namespace Majako.Plugin.Misc.SalesForecasting.Services
             public IEnumerable<Sale> Data { get; set; }
         }
 
+        public class RawForecastResponse
+        {
+            public IDictionary<string, float> BestParams { get; set; }
+            public float BestScore { get; set; }
+            public IDictionary<string, int> Predictions { get; set; }
+        }
+
         private const string BASE_URL = "https://majako-sales-forecasting.azurewebsites.net/";
         private readonly HttpClient _httpClient;
         private readonly ISettingService _settingService;
+        private readonly IProductService _productService;
+        private readonly ICategoryService _categoryService;
         private readonly IRepository<Order> _orderRepository;
         private readonly IRepository<OrderItem> _orderItemRepository;
         private readonly JsonSerializerSettings _jsonSerializerSettings = new JsonSerializerSettings
@@ -46,20 +58,24 @@ namespace Majako.Plugin.Misc.SalesForecasting.Services
             IRepository<Order> orderRepository,
             IRepository<OrderItem> orderItemRepository,
             ISettingService settingService,
+            IProductService productService,
+            ICategoryService categoryService,
             IHttpClientFactory httpClientFactory
         ){
             _httpClient = httpClientFactory.CreateClient(NopHttpDefaults.DefaultHttpClient);
             _httpClient.Timeout = TimeSpan.FromMinutes(30);
             _orderRepository = orderRepository;
             _settingService = settingService;
+            _productService = productService;
+            _categoryService = categoryService;
             _orderItemRepository = orderItemRepository;
         }
 
-        public async Task<ForecastResponse> ForecastAsync(int periodLength, IEnumerable<int> productIds, DateTime? until = null)
+        public async Task<IEnumerable<ForecastResponse>> ForecastAsync(int periodLength, ProductSearchModel productSearchModel, DateTime? until = null)
         {
             var settings = _settingService.LoadSetting<SalesForecastingPluginSettings>();
-
-            var data = GetData(productIds.ToArray());
+            var products = GetProductsFromSearch(productSearchModel);
+            var data = GetData(products.Select(p => p.Id).ToArray());
             if (until != null)
                 data = data.Where(s => s.Created <= until);
             if (!data.Any())
@@ -72,11 +88,8 @@ namespace Majako.Plugin.Misc.SalesForecasting.Services
             var requestContent = new StringContent(JsonConvert.SerializeObject(request, _jsonSerializerSettings));
             requestContent.Headers.ContentType = MediaTypeHeaderValue.Parse("application/json");
             var response = await _httpClient.PostAsync($"{BASE_URL}forecast", requestContent).ConfigureAwait(false);
-            var responseContent = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
-            var forecast = JsonConvert.DeserializeObject<ForecastResponse>(responseContent);
-            foreach (var pid in productIds.Cast<string>().Except(forecast.Predictions.Keys))
-                forecast.Predictions[pid] = 0;
-            return forecast;
+            var content = JsonConvert.DeserializeObject<RawForecastResponse>(await response.Content.ReadAsStringAsync().ConfigureAwait(false));
+            return products.Select(p => new ForecastResponse(p, content.Predictions.TryGetValue(p.Id.ToString(), out var prediction) ? prediction : 0));
         }
 
         private IEnumerable<Sale> GetData(int[] productIds)
@@ -101,12 +114,55 @@ namespace Majako.Plugin.Misc.SalesForecasting.Services
                 Quantity = r.quantity
             });
         }
+
+        private IEnumerable<Product> GetProductsFromSearch(ProductSearchModel productSearchModel)
+        {
+            var categoryIds = new List<int>();
+            if (productSearchModel.SearchCategoryId > 0)
+            {
+                categoryIds.Add(productSearchModel.SearchCategoryId);
+
+                if (productSearchModel.SearchIncludeSubCategories)
+                {
+                    var childCategoryIds = _categoryService.GetChildCategoryIds(parentCategoryId: productSearchModel.SearchCategoryId, showHidden: false);
+                    categoryIds.AddRange(childCategoryIds);
+                }
+            }
+
+            bool? overridePublished = null;
+            if (productSearchModel.SearchPublishedId > 0)
+            {
+                if (productSearchModel.SearchPublishedId == 1)
+                    overridePublished = true;
+                else if (productSearchModel.SearchPublishedId == 2)
+                    overridePublished = false;
+            }
+
+            return _productService.SearchProducts(
+                showHidden: true,
+                categoryIds: categoryIds,
+                manufacturerId: productSearchModel.SearchManufacturerId,
+                storeId: productSearchModel.SearchStoreId,
+                productType: productSearchModel.SearchProductTypeId > 0 ? (ProductType?)productSearchModel.SearchProductTypeId : null,
+                keywords: productSearchModel.SearchProductName,
+                pageIndex: 0, pageSize: int.MaxValue,
+                overridePublished: overridePublished);
+        }
     }
 
     public class ForecastResponse
     {
-        public IDictionary<string, float> BestParams { get; set; }
-        public float BestScore { get; set; }
-        public IDictionary<string, int> Predictions { get; set; }
+        public string Id { get; set; }
+        public string Name { get; set; }
+        public string Sku { get; set; }
+        public int Prediction { get; set; }
+
+        public ForecastResponse(Product product, int prediction)
+        {
+            Id = product.Id.ToString();
+            Name = product.Name;
+            Sku = product.Sku;
+            Prediction = prediction;
+        }
     }
 }
