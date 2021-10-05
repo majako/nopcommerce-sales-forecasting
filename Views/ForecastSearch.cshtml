@@ -1,7 +1,9 @@
 ﻿@using Nop.Web.Framework.UI
 @using Nop.Web.Areas.Admin.Models.Catalog
+@using Majako.Plugin.Misc.SalesForecasting.Models
+@using Nop.Web.Framework.Models.DataTables
 @inject Nop.Web.Areas.Admin.Factories.IProductModelFactory productModelFactory
-@model Majako.Plugin.Misc.SalesForecasting.Models.ForecastModel
+@model ForecastSearchModel
 
 @{
     ViewBag.Title = T("Majako.Plugin.Misc.SalesForecasting.SalesForecasting").Text;
@@ -14,7 +16,6 @@
     var headerId = System.Guid.NewGuid();
     var prevBtnId = System.Guid.NewGuid();
     var nextBtnId = System.Guid.NewGuid();
-    var submitBtnId = System.Guid.NewGuid();
     var rangeId = System.Guid.NewGuid();
     var pageSize = 20;
 }
@@ -45,43 +46,51 @@
                         </div>
                     </div>
                 </div>
-                
-                <div id="@resultsPanelId" class="panel-body" hidden=true>
-                    <table style="border-spacing:10px; border-collapse: separate;">
-                        <thead>
-                            <tr>
-                                <th>@T("Majako.Plugin.Misc.SalesForecasting.ProductId")</th>
-                                <th id="@headerId">@T("Majako.Plugin.Misc.SalesForecasting.SKU")</th>
-                                <th>@T("Majako.Plugin.Misc.SalesForecasting.ProductName")</th>
-                                <th>@T("Majako.Plugin.Misc.SalesForecasting.Forecast")</th>
-                            </tr>
-                        </thead>
-                        <tbody id="@resultsId">
-                        </tbody>
-                    </table>
-                    <div class="row" style="padding-bottom:40px">
-                        <div class="col-md-offset-6">
-                            <button id="@submitBtnId" type="button" class="btn btn-primary" onclick="salesForecast_submit()">
-                                @T("Majako.Plugin.Misc.SalesForecasting.Submit")
-                            </button>
-                        </div>
-                    </div>
-                    <div class="row">
-                        <div class="col-md-offset-4 col-md-2" id="@rangeId">
-                        </div>
-                        <div class="col-md-offset-6">
-                            <span id="@prevBtnId">
-                                <button type="button" class="btn btn-primary" onclick="salesForecast_previousPage()">
-                                    @T("Majako.Plugin.Misc.SalesForecasting.Previous")
-                                </button>
-                            </span>
-                            <span id="@nextBtnId" hidden=true>
-                                <button type="button" class="btn btn-primary" onclick="salesForecast_nextPage()">
-                                    @T("Majako.Plugin.Misc.SalesForecasting.Next")
-                                </button>
-                            </span>
-                        </div>
-                    </div>
+
+                <div id="@resultsPanelId" class="panel-body">
+                    @await Html.PartialAsync("Table", new DataTablesModel
+                    {
+                        Name = "forecast-grid",
+                        UrlRead = new DataUrl("Forecast", "SalesForecasting", null),
+                        Length = Model.ProductSearchModel.PageSize,
+                        LengthMenu = Model.ProductSearchModel.AvailablePageSizes,
+                        Filters = new List<FilterParameter>
+                        {
+                            new FilterParameter(nameof(Model.ProductSearchModel.SearchProductName)),
+                            new FilterParameter(nameof(Model.ProductSearchModel.SearchCategoryId)),
+                            new FilterParameter(nameof(Model.ProductSearchModel.SearchIncludeSubCategories), typeof(bool)),
+                            new FilterParameter(nameof(Model.ProductSearchModel.SearchManufacturerId)),
+                            new FilterParameter(nameof(Model.ProductSearchModel.SearchStoreId)),
+                            new FilterParameter(nameof(Model.ProductSearchModel.SearchWarehouseId)),
+                            new FilterParameter(nameof(Model.ProductSearchModel.SearchVendorId)),
+                            new FilterParameter(nameof(Model.ProductSearchModel.SearchProductTypeId)),
+                            new FilterParameter(nameof(Model.PeriodLength)),
+                            new FilterParameter(nameof(Model.ProductSearchModel.SearchPublishedId))
+                        },
+                        ColumnCollection = new List<ColumnProperty>
+                        {
+                            new ColumnProperty(nameof(ForecastResponse.Id))
+                            {
+                                Title = T("Majako.Plugin.Misc.SalesForecasting.ProductId").Text
+                            },
+                            new ColumnProperty(nameof(ForecastResponse.Sku))
+                            {
+                                Title = T("Majako.Plugin.Misc.SalesForecasting.Sku").Text,
+                                Width = "100"
+                            },
+                            new ColumnProperty(nameof(ForecastResponse.Name))
+                            {
+                                Title = T("Majako.Plugin.Misc.SalesForecasting.ProductName").Text,
+                                Width = "150"
+                            },
+                            new ColumnProperty(nameof(ForecastResponse.Prediction))
+                            {
+                                Title = T("Majako.Plugin.Misc.SalesForecasting.Prediction").Text,
+                                Width = "50",
+                                ClassName = NopColumnClassDefaults.CenterAll
+                            }
+                        }
+                    })
                 </div>
 
                 <div class="panel-body">
@@ -104,6 +113,14 @@
 <script>
     let salesForecast_results = [];
     let salesForecast_startIndex = 0;
+
+    function salesForecast_previousPage() {
+        salesForecast_displayResultsPage(salesForecast_startIndex -= @pageSize, @pageSize);
+    }
+    
+    function salesForecast_nextPage() {
+        salesForecast_displayResultsPage(salesForecast_startIndex += @pageSize, @pageSize);
+    }
 
     function salesForecast_submit() {
         const data = {
@@ -130,7 +147,6 @@
                 productSearchPanel.hidden = false;
             },
             success: r => {
-                console.log(r);
                 salesForecast_results = r;
                 document.getElementById('@resultsPanelId').hidden = false;
                 salesForecast_displayResultsPage(salesForecast_startIndex, @pageSize);
@@ -141,21 +157,18 @@
     function salesForecast_displayResultsPage(start, count) {
         const table = document.getElementById('@resultsId');
         table.innerText = '';
-        const submitBtn = document.getElementById('@submitBtnId');
-        submitBtn.disabled = true;
-        salesForecast_results = {};
-        const requests = salesForecast_products.slice(start, start + count).map(item => {
+        salesForecast_results.slice(start, start + count).forEach(item => {
             const row = document.createElement('tr');
-            const label = document.createElement('td');
-            label.innerText = item.sku;
-            row.appendChild(label);
+            ['Id', 'Sku', 'Name', 'Prediction'].forEach(label => {
+                const cell = document.createElement('td');
+                cell.innerText = item[label];
+                row.appendChild(cell);
+            });
             table.appendChild(row);
-            return salesForecast_classify(item.productId, item.classes, row);
         });
-        Promise.allSettled(requests).then(() => submitBtn.disabled = false);
-        document.getElementById('@rangeId').innerText = `${start + 1}-${Math.min(start + count, salesForecast_products.length)} av ${salesForecast_products.length}`;
+        document.getElementById('@rangeId').innerText = `${start + 1}-${Math.min(start + count, salesForecast_results.length)} (${salesForecast_results.length})`;
         document.getElementById('@prevBtnId').hidden = start === 0;
-        document.getElementById('@nextBtnId').hidden = start + count >= salesForecast_products.length;
+        document.getElementById('@nextBtnId').hidden = start + count >= salesForecast_results.length;
     }
 
 </script>

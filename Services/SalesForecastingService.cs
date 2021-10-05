@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Net.Http;
 using System.Net.Http.Headers;
+using Majako.Plugin.Misc.SalesForecasting.Models;
 using Nop.Core.Data;
 using Nop.Core.Http;
 using Nop.Core.Domain.Catalog;
@@ -147,22 +148,6 @@ namespace Majako.Plugin.Misc.SalesForecasting.Services
                 keywords: productSearchModel.SearchProductName,
                 pageIndex: 0, pageSize: int.MaxValue,
                 overridePublished: overridePublished);
-        }
-    }
-
-    public class ForecastResponse
-    {
-        public string Id { get; set; }
-        public string Name { get; set; }
-        public string Sku { get; set; }
-        public int Prediction { get; set; }
-
-        public ForecastResponse(Product product, int prediction)
-        {
-            Id = product.Id.ToString();
-            Name = product.Name;
-            Sku = product.Sku;
-            Prediction = prediction;
         }
     }
 }

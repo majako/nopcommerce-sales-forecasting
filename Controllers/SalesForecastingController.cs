@@ -3,6 +3,7 @@ using System.Threading.Tasks;
 using System.Linq;
 using Majako.Plugin.Misc.SalesForecasting;
 using Majako.Plugin.Misc.SalesForecasting.Services;
+using Majako.Plugin.Misc.SalesForecasting.Models;
 using Microsoft.AspNetCore.Mvc;
 using Nop.Services.Configuration;
 using Nop.Services.Localization;
@@ -56,10 +57,10 @@ namespace Majako.Plugin.Misc.SalesForecasting.Controllers
             if (!_permissionService.Authorize(StandardPermissionProvider.ManageOrders))
                 return AccessDeniedView();
 
-            return View("~/Plugins/Misc.SalesForecasting/Views/Forecast.cshtml", null);
+            return View("~/Plugins/Misc.SalesForecasting/Views/ForecastSearch.cshtml", new ForecastSearchModel());
         }
 
-        [HttpPost, ActionName("Configure")]
+        [HttpPost]
         [AuthorizeAdmin]
         [AdminAntiForgery]
         [Area(AreaNames.Admin)]
@@ -75,16 +76,20 @@ namespace Majako.Plugin.Misc.SalesForecasting.Controllers
             return View("~/Plugins/Misc.SalesForecasting/Views/Configure.cshtml", settings);
         }
 
-        [HttpPost, ActionName("PostForecast")]
+        [HttpPost]
         [AuthorizeAdmin]
         [AdminAntiForgery]
         [Area(AreaNames.Admin)]
-        public async Task<IActionResult> PostForecastAsync(ProductSearchModel productSearchModel, int period)
+        public async Task<IActionResult> Forecast(ForecastSearchModel searchModel)
         {
             if (!_permissionService.Authorize(StandardPermissionProvider.ManageOrders))
                 return AccessDeniedView();
-            var forecast = await _salesForecastingService.ForecastAsync(period, productSearchModel);
-            return Ok(forecast);
+            var forecast = await _salesForecastingService.ForecastAsync(searchModel.PeriodLength, searchModel.ProductSearchModel).ConfigureAwait(false);
+            var model = new ForecastListModel().PrepareToGrid(searchModel, forecast, () => forecast);
+            return Json(model);
+            // return View(
+            //     "~/Plugins/Misc.SalesForecasting/Views/ForecastResults.cshtml",
+            //     new ForecastResultsModel { Results = forecast });
         }
     }
 }

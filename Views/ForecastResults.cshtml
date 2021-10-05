@@ -1,0 +1,74 @@
+﻿@using Nop.Web.Framework.UI
+@using Nop.Web.Areas.Admin.Models.Catalog
+@using Nop.Web.Framework.Models.DataTables
+@model Majako.Plugin.Misc.SalesForecasting.Models.ForecastResultsModel
+
+@{
+    ViewBag.Title = T("Majako.Plugin.Misc.SalesForecasting.SalesForecasting").Text;
+    Html.SetActiveMenuItemSystemName("Sales.SalesForecasting");
+    Layout = "~/Areas/Admin/Views/Shared/_AdminLayout.cshtml";
+    var resultsPanelId = System.Guid.NewGuid();
+    var resultsId = System.Guid.NewGuid();
+    var headerId = System.Guid.NewGuid();
+    var prevBtnId = System.Guid.NewGuid();
+    var nextBtnId = System.Guid.NewGuid();
+    var rangeId = System.Guid.NewGuid();
+}
+
+<div class="content-header clearfix">
+    <h1 class="pull-left">
+        @T("Majako.Plugin.Misc.SalesForecasting.SalesForecasting")
+    </h1>
+</div>
+
+@* <div class="content">
+    <div class="form-horizontal">
+        <div class="panel panel-default">
+            <div class="panel-body">
+                @await Html.PartialAsync("Table", new DataTablesModel
+                {
+                    Name = "manufacturers-grid",
+                    Length = Model.PageSize,
+                    Filters = new List<FilterParameter>
+                    {
+                        new FilterParameter(nameof(Model.ProductSearchModel.SearchProductName)),
+                        new FilterParameter(nameof(Model.ProductSearchModel.SearchCategoryId)),
+                        new FilterParameter(nameof(Model.ProductSearchModel.SearchIncludeSubCategories), typeof(bool)),
+                        new FilterParameter(nameof(Model.ProductSearchModel.SearchManufacturerId)),
+                        new FilterParameter(nameof(Model.ProductSearchModel.SearchStoreId)),
+                        new FilterParameter(nameof(Model.ProductSearchModel.SearchWarehouseId)),
+                        new FilterParameter(nameof(Model.ProductSearchModel.SearchVendorId)),
+                        new FilterParameter(nameof(Model.ProductSearchModel.SearchProductTypeId)),
+                        new FilterParameter(nameof(Model.PeriodLength)),
+                        new FilterParameter(nameof(Model.ProductSearchModel.SearchPublishedId))
+                    },
+                    ColumnCollection = new List<ColumnProperty>
+                    {
+                        new ColumnProperty(nameof(ManufacturerModel.Name))
+                        {
+                            Title = T("Majako.Plugin.Misc.SalesForecasting.ProductId").Text
+                        },
+                        new ColumnProperty(nameof(ManufacturerModel.Published))
+                        {
+                            Title = T("Majako.Plugin.Misc.SalesForecasting.Sku").Text,
+                            Width = "100",
+                            ClassName =  NopColumnClassDefaults.CenterAll,
+                            Render = new RenderBoolean()
+                        },
+                        new ColumnProperty(nameof(ManufacturerModel.DisplayOrder))
+                        {
+                            Title = T("Majako.Plugin.Misc.SalesForecasting.Name").Text,
+                            Width = "150",
+                            ClassName = NopColumnClassDefaults.CenterAll
+                        },
+                        new ColumnProperty(nameof(ManufacturerModel.Id))
+                        {
+                            Title = T("Majako.Plugin.Misc.SalesForecasting.Prediction").Text,
+                            Width = "100"
+                        }
+                    }
+                })
+            </div>
+        </div>
+    </div>
+</div> *@
