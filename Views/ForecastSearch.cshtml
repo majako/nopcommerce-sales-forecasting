@@ -12,12 +12,50 @@
     var productSearchModel = productModelFactory.PrepareProductSearchModel(new ProductSearchModel());
     var productSearchPanelId = System.Guid.NewGuid();
     var resultsPanelId = System.Guid.NewGuid();
-    var resultsId = System.Guid.NewGuid();
-    var headerId = System.Guid.NewGuid();
-    var prevBtnId = System.Guid.NewGuid();
-    var nextBtnId = System.Guid.NewGuid();
-    var rangeId = System.Guid.NewGuid();
-    var pageSize = 20;
+    var tableModel = new DataTablesModel
+    {
+        Name = "forecast-grid",
+        UrlRead = new DataUrl("Forecast", "SalesForecasting", null),
+        SearchButtonId = "forecast-submit",
+        Length = Model.ProductSearchModel.PageSize,
+        LengthMenu = Model.ProductSearchModel.AvailablePageSizes,
+        Filters = new List<FilterParameter>
+        {
+            new FilterParameter(nameof(Model.ProductSearchModel.SearchProductName)),
+            new FilterParameter(nameof(Model.ProductSearchModel.SearchCategoryId)),
+            new FilterParameter(nameof(Model.ProductSearchModel.SearchIncludeSubCategories), typeof(bool)),
+            new FilterParameter(nameof(Model.ProductSearchModel.SearchManufacturerId)),
+            new FilterParameter(nameof(Model.ProductSearchModel.SearchStoreId)),
+            new FilterParameter(nameof(Model.ProductSearchModel.SearchWarehouseId)),
+            new FilterParameter(nameof(Model.ProductSearchModel.SearchVendorId)),
+            new FilterParameter(nameof(Model.ProductSearchModel.SearchProductTypeId)),
+            new FilterParameter(nameof(Model.PeriodLength)),
+            new FilterParameter(nameof(Model.ProductSearchModel.SearchPublishedId))
+        },
+        ColumnCollection = new List<ColumnProperty>
+        {
+            new ColumnProperty(nameof(ForecastResponse.Name))
+            {
+                Title = T("Majako.Plugin.Misc.SalesForecasting.ProductName").Text
+            },
+            new ColumnProperty(nameof(ForecastResponse.ProductId))
+            {
+                Title = T("Majako.Plugin.Misc.SalesForecasting.ProductId").Text,
+                Width = "150"
+            },
+            new ColumnProperty(nameof(ForecastResponse.Sku))
+            {
+                Title = T("Majako.Plugin.Misc.SalesForecasting.Sku").Text,
+                Width = "200"
+            },
+            new ColumnProperty(nameof(ForecastResponse.Prediction))
+            {
+                Title = T("Majako.Plugin.Misc.SalesForecasting.Prediction").Text,
+                Width = "100",
+                ClassName = NopColumnClassDefaults.CenterAll
+            }
+        }
+    };
 }
 
 <div class="content-header clearfix">
@@ -45,62 +83,30 @@
                             </div>
                         </div>
                     </div>
+                    <div class="row">
+                        <div class="col-md-7 col-md-offset-5">
+                            <button type="button" id="forecast-submit" class="btn btn-primary">
+                                @T("Majako.Plugin.Misc.SalesForecasting.Submit")
+                            </button>
+                        </div>
+                    </div>
                 </div>
 
                 <div id="@resultsPanelId" class="panel-body">
-                    @await Html.PartialAsync("Table", new DataTablesModel
-                    {
-                        Name = "forecast-grid",
-                        UrlRead = new DataUrl("Forecast", "SalesForecasting", null),
-                        Length = Model.ProductSearchModel.PageSize,
-                        LengthMenu = Model.ProductSearchModel.AvailablePageSizes,
-                        Filters = new List<FilterParameter>
-                        {
-                            new FilterParameter(nameof(Model.ProductSearchModel.SearchProductName)),
-                            new FilterParameter(nameof(Model.ProductSearchModel.SearchCategoryId)),
-                            new FilterParameter(nameof(Model.ProductSearchModel.SearchIncludeSubCategories), typeof(bool)),
-                            new FilterParameter(nameof(Model.ProductSearchModel.SearchManufacturerId)),
-                            new FilterParameter(nameof(Model.ProductSearchModel.SearchStoreId)),
-                            new FilterParameter(nameof(Model.ProductSearchModel.SearchWarehouseId)),
-                            new FilterParameter(nameof(Model.ProductSearchModel.SearchVendorId)),
-                            new FilterParameter(nameof(Model.ProductSearchModel.SearchProductTypeId)),
-                            new FilterParameter(nameof(Model.PeriodLength)),
-                            new FilterParameter(nameof(Model.ProductSearchModel.SearchPublishedId))
-                        },
-                        ColumnCollection = new List<ColumnProperty>
-                        {
-                            new ColumnProperty(nameof(ForecastResponse.Id))
-                            {
-                                Title = T("Majako.Plugin.Misc.SalesForecasting.ProductId").Text
-                            },
-                            new ColumnProperty(nameof(ForecastResponse.Sku))
-                            {
-                                Title = T("Majako.Plugin.Misc.SalesForecasting.Sku").Text,
-                                Width = "100"
-                            },
-                            new ColumnProperty(nameof(ForecastResponse.Name))
-                            {
-                                Title = T("Majako.Plugin.Misc.SalesForecasting.ProductName").Text,
-                                Width = "150"
-                            },
-                            new ColumnProperty(nameof(ForecastResponse.Prediction))
-                            {
-                                Title = T("Majako.Plugin.Misc.SalesForecasting.Prediction").Text,
-                                Width = "50",
-                                ClassName = NopColumnClassDefaults.CenterAll
-                            }
-                        }
-                    })
+                    @await Html.PartialAsync("Table", tableModel)
                 </div>
 
                 <div class="panel-body">
                     <div class="col-md-6">
                         <div class="form-group">
                             <div class="col-md-8 col-md-offset-4">
-                                <button type="button" class="btn bg-olive" onclick="salesForecast_submit()">
-                                    <i class="fa fa-download"></i>
-                                    @T("Majako.Plugin.Misc.SalesForecasting.SaveCsv")
-                                </button>
+                                @using(@Html.BeginForm("ExportCsv", "SalesForecasting", new { arg = tableModel.Data }, FormMethod.Post))
+                                {
+                                    <button type="submit" class="btn bg-olive" id="export-csv">
+                                        <i class="fa fa-download"></i>
+                                        @T("Majako.Plugin.Misc.SalesForecasting.SaveCsv")
+                                    </button>
+                                }
                             </div>
                         </div>
                     </div>
@@ -110,65 +116,18 @@
     </div>
 </div>
 
+@* <form asp-controller="SalesForecasting" asp-action="ExportCsv" method="post" id="export-csv-form">
+    <input type="hidden" id="selectedIds" name="selectedIds" value="" />
+</form>
+
 <script>
-    let salesForecast_results = [];
-    let salesForecast_startIndex = 0;
-
-    function salesForecast_previousPage() {
-        salesForecast_displayResultsPage(salesForecast_startIndex -= @pageSize, @pageSize);
-    }
-    
-    function salesForecast_nextPage() {
-        salesForecast_displayResultsPage(salesForecast_startIndex += @pageSize, @pageSize);
-    }
-
-    function salesForecast_submit() {
-        const data = {
-            productSearchModel: {
-                SearchProductName: $("#SearchProductName").val(),
-                SearchCategoryId: $("#SearchCategoryId option:selected").val(),
-                SearchIncludeSubCategories: $("#SearchIncludeSubCategories")[0].checked,
-                SearchManufacturerId: $("#SearchManufacturerId option:selected").val(),
-                SearchStoreId: $("#SearchStoreId option:selected").val(),
-                SearchProductTypeId: $("#SearchProductTypeId option:selected").val(),
-                SearchPublishedId: $("#SearchPublishedId option:selected").val()
-            },
-            period: $("#PeriodLength").val()
-        };
-        addAntiForgeryToken(data);
-        const productSearchPanel = document.getElementById('@productSearchPanelId');
-        productSearchPanel.hidden = true;
-        $.ajax({
-            cache: false,
-            type: 'POST',
-            data: data,
-            url: '@(Url.Action("PostForecast", "SalesForecasting"))',
-            complete: () => {
-                productSearchPanel.hidden = false;
-            },
-            success: r => {
-                salesForecast_results = r;
-                document.getElementById('@resultsPanelId').hidden = false;
-                salesForecast_displayResultsPage(salesForecast_startIndex, @pageSize);
-            }
+    $(document).ready(function () {
+        $('#exportxml-selected').click(function (e) {
+            e.preventDefault();
+            var ids = selectedIds.join(",");
+            $('#export-xml-selected-form #selectedIds').val(ids);
+            $('#export-xml-selected-form').submit();
+            return false;
         });
-    }
-
-    function salesForecast_displayResultsPage(start, count) {
-        const table = document.getElementById('@resultsId');
-        table.innerText = '';
-        salesForecast_results.slice(start, start + count).forEach(item => {
-            const row = document.createElement('tr');
-            ['Id', 'Sku', 'Name', 'Prediction'].forEach(label => {
-                const cell = document.createElement('td');
-                cell.innerText = item[label];
-                row.appendChild(cell);
-            });
-            table.appendChild(row);
-        });
-        document.getElementById('@rangeId').innerText = `${start + 1}-${Math.min(start + count, salesForecast_results.length)} (${salesForecast_results.length})`;
-        document.getElementById('@prevBtnId').hidden = start === 0;
-        document.getElementById('@nextBtnId').hidden = start + count >= salesForecast_results.length;
-    }
-
-</script>
+    });
+</script> *@

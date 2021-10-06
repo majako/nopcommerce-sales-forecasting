@@ -22,7 +22,7 @@
         <Value>SKU</Value>
     </LocaleResource>
     <LocaleResource Name="Majako.Plugin.Misc.SalesForecasting.ProductId">
-        <Value>ID</Value>
+        <Value>Product ID</Value>
     </LocaleResource>
     <LocaleResource Name="Majako.Plugin.Misc.SalesForecasting.ProductName">
         <Value>Name</Value>
