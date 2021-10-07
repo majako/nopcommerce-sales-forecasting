@@ -1,3 +1,5 @@
+using System;
+using System.Collections.Generic;
 using Nop.Web.Areas.Admin.Models.Catalog;
 using Nop.Web.Areas.Admin.Factories;
 using Nop.Core.Infrastructure;
@@ -6,14 +8,13 @@ using Nop.Web.Framework.Mvc.ModelBinding;
 
 namespace Majako.Plugin.Misc.SalesForecasting.Models
 {
-    public class ForecastSearchModel : ProductSearchModel
+    public class ForecastResultModel : BaseSearchModel
     {
-        public int PeriodLength { get; set; }
+        public string ResultsJson { get; set; }
 
-        public ForecastSearchModel()
+        public ForecastResultModel()
         {
-            PeriodLength = 14;
-            EngineContext.Current.Resolve<IProductModelFactory>().PrepareProductSearchModel(this);
+            ResultsJson = "[]";
         }
     }
 }

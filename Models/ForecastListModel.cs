@@ -14,6 +14,8 @@ namespace Majako.Plugin.Misc.SalesForecasting.Models
         public string Sku { get; set; }
         public int Prediction { get; set; }
 
+        public ForecastResponse() {}
+
         public ForecastResponse(Product product, int prediction)
         {
             ProductId = product.Id.ToString();

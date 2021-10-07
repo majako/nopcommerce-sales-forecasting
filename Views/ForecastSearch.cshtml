@@ -9,53 +9,6 @@
     ViewBag.Title = T("Majako.Plugin.Misc.SalesForecasting.SalesForecasting").Text;
     Html.SetActiveMenuItemSystemName("Sales.SalesForecasting");
     Layout = "~/Areas/Admin/Views/Shared/_AdminLayout.cshtml";
-    var productSearchModel = productModelFactory.PrepareProductSearchModel(new ProductSearchModel());
-    var productSearchPanelId = System.Guid.NewGuid();
-    var resultsPanelId = System.Guid.NewGuid();
-    var tableModel = new DataTablesModel
-    {
-        Name = "forecast-grid",
-        UrlRead = new DataUrl("Forecast", "SalesForecasting", null),
-        SearchButtonId = "forecast-submit",
-        Length = Model.ProductSearchModel.PageSize,
-        LengthMenu = Model.ProductSearchModel.AvailablePageSizes,
-        Filters = new List<FilterParameter>
-        {
-            new FilterParameter(nameof(Model.ProductSearchModel.SearchProductName)),
-            new FilterParameter(nameof(Model.ProductSearchModel.SearchCategoryId)),
-            new FilterParameter(nameof(Model.ProductSearchModel.SearchIncludeSubCategories), typeof(bool)),
-            new FilterParameter(nameof(Model.ProductSearchModel.SearchManufacturerId)),
-            new FilterParameter(nameof(Model.ProductSearchModel.SearchStoreId)),
-            new FilterParameter(nameof(Model.ProductSearchModel.SearchWarehouseId)),
-            new FilterParameter(nameof(Model.ProductSearchModel.SearchVendorId)),
-            new FilterParameter(nameof(Model.ProductSearchModel.SearchProductTypeId)),
-            new FilterParameter(nameof(Model.PeriodLength)),
-            new FilterParameter(nameof(Model.ProductSearchModel.SearchPublishedId))
-        },
-        ColumnCollection = new List<ColumnProperty>
-        {
-            new ColumnProperty(nameof(ForecastResponse.Name))
-            {
-                Title = T("Majako.Plugin.Misc.SalesForecasting.ProductName").Text
-            },
-            new ColumnProperty(nameof(ForecastResponse.ProductId))
-            {
-                Title = T("Majako.Plugin.Misc.SalesForecasting.ProductId").Text,
-                Width = "150"
-            },
-            new ColumnProperty(nameof(ForecastResponse.Sku))
-            {
-                Title = T("Majako.Plugin.Misc.SalesForecasting.Sku").Text,
-                Width = "200"
-            },
-            new ColumnProperty(nameof(ForecastResponse.Prediction))
-            {
-                Title = T("Majako.Plugin.Misc.SalesForecasting.Prediction").Text,
-                Width = "100",
-                ClassName = NopColumnClassDefaults.CenterAll
-            }
-        }
-    };
 }
 
 <div class="content-header clearfix">
@@ -64,49 +17,31 @@
     </h1>
 </div>
 
-<div class="content">
-    <div class="form-horizontal">
-        <div class="panel-group">
-            <div class="panel panel-default">
-                <div class="panel-body" id="@productSearchPanelId">
-                    @await Html.PartialAsync("ProductSearch.cshtml", productSearchModel)
+<form asp-controller="SalesForecasting" asp-action="Forecast" method="post">
+    <div class="content">
+        <div class="form-horizontal">
+            <div class="panel-group">
+                <div class="panel panel-default">
+                    <div class="panel-body">
+                        @await Html.PartialAsync("ProductSearch.cshtml", Model)
 
-                    <div class="panel-body row">
-                        <div class="col-md-5">
-                            <div class="form-group">
-                                <div class="col-md-4">
-                                    <nop-label asp-for="PeriodLength" />
-                                </div>
-                                <div class="col-md-8">
-                                    <nop-editor asp-for="PeriodLength" />
+                        <div class="panel-body row">
+                            <div class="col-md-5">
+                                <div class="form-group">
+                                    <div class="col-md-4">
+                                        <nop-label asp-for="PeriodLength" />
+                                    </div>
+                                    <div class="col-md-8">
+                                        <nop-editor asp-for="PeriodLength" />
+                                    </div>
                                 </div>
                             </div>
                         </div>
-                    </div>
-                    <div class="row">
-                        <div class="col-md-7 col-md-offset-5">
-                            <button type="button" id="forecast-submit" class="btn btn-primary">
-                                @T("Majako.Plugin.Misc.SalesForecasting.Submit")
-                            </button>
-                        </div>
-                    </div>
-                </div>
-
-                <div id="@resultsPanelId" class="panel-body">
-                    @await Html.PartialAsync("Table", tableModel)
-                </div>
-
-                <div class="panel-body">
-                    <div class="col-md-6">
-                        <div class="form-group">
-                            <div class="col-md-8 col-md-offset-4">
-                                @using(@Html.BeginForm("ExportCsv", "SalesForecasting", new { arg = tableModel.Data }, FormMethod.Post))
-                                {
-                                    <button type="submit" class="btn bg-olive" id="export-csv">
-                                        <i class="fa fa-download"></i>
-                                        @T("Majako.Plugin.Misc.SalesForecasting.SaveCsv")
-                                    </button>
-                                }
+                        <div class="row">
+                            <div class="col-md-7 col-md-offset-5">
+                                <button type="submit" id="forecast-submit" class="btn btn-primary">
+                                    @T("Majako.Plugin.Misc.SalesForecasting.Submit")
+                                </button>
                             </div>
                         </div>
                     </div>
@@ -114,20 +49,4 @@
             </div>
         </div>
     </div>
-</div>
-
-@* <form asp-controller="SalesForecasting" asp-action="ExportCsv" method="post" id="export-csv-form">
-    <input type="hidden" id="selectedIds" name="selectedIds" value="" />
 </form>
-
-<script>
-    $(document).ready(function () {
-        $('#exportxml-selected').click(function (e) {
-            e.preventDefault();
-            var ids = selectedIds.join(",");
-            $('#export-xml-selected-form #selectedIds').val(ids);
-            $('#export-xml-selected-form').submit();
-            return false;
-        });
-    });
-</script> *@

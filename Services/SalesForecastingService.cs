@@ -72,7 +72,7 @@ namespace Majako.Plugin.Misc.SalesForecasting.Services
             _orderItemRepository = orderItemRepository;
         }
 
-        public async Task<IEnumerable<ForecastResponse>> ForecastAsync(int periodLength, ProductSearchModel productSearchModel, DateTime? until = null)
+        public async Task<IEnumerable<ForecastResponse>> ForecastAsync(ForecastSearchModel productSearchModel, DateTime? until = null)
         {
             var settings = _settingService.LoadSetting<SalesForecastingPluginSettings>();
             var products = GetProductsFromSearch(productSearchModel);
@@ -84,7 +84,7 @@ namespace Majako.Plugin.Misc.SalesForecasting.Services
             var request = new ForecastRequest
             {
                 Data = data,
-                Period = periodLength
+                Period = productSearchModel.PeriodLength
             };
             var requestContent = new StringContent(JsonConvert.SerializeObject(request, _jsonSerializerSettings));
             requestContent.Headers.ContentType = MediaTypeHeaderValue.Parse("application/json");

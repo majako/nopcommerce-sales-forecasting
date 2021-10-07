@@ -1,4 +1,5 @@
-﻿using System.Linq;
+﻿using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 using Majako.Plugin.Misc.SalesForecasting.Services;
 using Majako.Plugin.Misc.SalesForecasting.Models;
@@ -8,10 +9,13 @@ using Nop.Services.Configuration;
 using Nop.Services.Localization;
 using Nop.Services.Messages;
 using Nop.Services.Security;
+using Nop.Web.Areas.Admin.Factories;
 using Nop.Web.Framework;
 using Nop.Web.Framework.Controllers;
 using Nop.Web.Framework.Mvc.Filters;
 using Nop.Web.Framework.Models.Extensions;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Serialization;
 
 namespace Majako.Plugin.Misc.SalesForecasting.Controllers
 {
@@ -22,6 +26,12 @@ namespace Majako.Plugin.Misc.SalesForecasting.Controllers
         private readonly INotificationService _notificationService;
         private readonly SalesForecastingService _salesForecastingService;
         private readonly ILocalizationService _localizationService;
+        private readonly JsonSerializerSettings _jsonSerializerSettings = new JsonSerializerSettings
+        {
+            ContractResolver = new CamelCasePropertyNamesContractResolver(),
+            NullValueHandling = NullValueHandling.Ignore,
+            StringEscapeHandling = StringEscapeHandling.EscapeHtml
+        };
 
         public SalesForecastingController(
             IPermissionService permissionService,
@@ -83,37 +93,45 @@ namespace Majako.Plugin.Misc.SalesForecasting.Controllers
         {
             if (!_permissionService.Authorize(StandardPermissionProvider.ManageOrders))
                 return AccessDeniedView();
-            if (searchModel.PeriodLength < 15)
+
+            var forecast = await _salesForecastingService.ForecastAsync(searchModel).ConfigureAwait(false);
+            var resultModel = new ForecastResultModel
             {
-                return Json(new ForecastListModel().PrepareToGrid(
-                        searchModel.ProductSearchModel,
-                        new PagedList<ForecastResponse>(
-                            Enumerable.Empty<ForecastResponse>().AsQueryable(),
-                            searchModel.ProductSearchModel.Page,
-                            searchModel.ProductSearchModel.PageSize,
-                            0),
-                        () => Enumerable.Empty<ForecastResponse>()));
-            }
-            var forecast = await _salesForecastingService.ForecastAsync(searchModel.PeriodLength, searchModel.ProductSearchModel).ConfigureAwait(false);
-            var model = new ForecastListModel().PrepareToGrid(
-                searchModel.ProductSearchModel,
-                new PagedList<ForecastResponse>(
-                    forecast.AsQueryable(),
-                    searchModel.ProductSearchModel.Page,
-                    searchModel.ProductSearchModel.PageSize,
-                    forecast.Count()),
-                () => forecast);
-            return Json(model);
+                ResultsJson = JsonConvert.SerializeObject(forecast, _jsonSerializerSettings)
+            };
+            resultModel.SetGridPageSize();
+            return View("~/Plugins/Misc.SalesForecasting/Views/ForecastResults.cshtml", resultModel);
         }
 
         [HttpPost]
         [AuthorizeAdmin]
         [AdminAntiForgery]
         [Area(AreaNames.Admin)]
-        public async Task<IActionResult> ExportCsv(object model)
+        public IActionResult GetResultsPage(ForecastResultModel model)
         {
             if (!_permissionService.Authorize(StandardPermissionProvider.ManageOrders))
                 return AccessDeniedView();
+
+            var results = JsonConvert.DeserializeObject<ForecastResponse[]>(model.ResultsJson);
+            return Json(new ForecastListModel().PrepareToGrid(
+                model,
+                new PagedList<ForecastResponse>(
+                    results,
+                    model.Page,
+                    model.PageSize,
+                    results.Length),
+                () => results.Skip((model.Page - 1) * model.PageSize).Take(model.PageSize)));
+        }
+
+        [HttpPost]
+        [AuthorizeAdmin]
+        [AdminAntiForgery]
+        [Area(AreaNames.Admin)]
+        public IActionResult ExportCsv(string resultsJson)
+        {
+            if (!_permissionService.Authorize(StandardPermissionProvider.ManageOrders))
+                return AccessDeniedView();
+            var results = JsonConvert.DeserializeObject<ForecastResponse[]>(resultsJson);
             return Ok();
         }
     }
