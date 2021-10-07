@@ -64,7 +64,7 @@
                     <div class="col-md-6">
                         <div class="form-group">
                             <div class="col-md-8 col-md-offset-4">
-                                @using(@Html.BeginForm("ExportCsv", "SalesForecasting", new { arg = Model.ResultsJson }, FormMethod.Post))
+                                @using(@Html.BeginForm("ExportCsv", "SalesForecasting", new { resultsJson = Model.ResultsJson }, FormMethod.Post))
                                 {
                                     <button type="submit" class="btn bg-olive" id="export-csv">
                                         <i class="fa fa-download"></i>

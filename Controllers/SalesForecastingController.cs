@@ -9,13 +9,14 @@ using Nop.Services.Configuration;
 using Nop.Services.Localization;
 using Nop.Services.Messages;
 using Nop.Services.Security;
-using Nop.Web.Areas.Admin.Factories;
 using Nop.Web.Framework;
 using Nop.Web.Framework.Controllers;
 using Nop.Web.Framework.Mvc.Filters;
 using Nop.Web.Framework.Models.Extensions;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Serialization;
+using System;
+using System.IO;
 
 namespace Majako.Plugin.Misc.SalesForecasting.Controllers
 {
@@ -131,8 +132,22 @@ namespace Majako.Plugin.Misc.SalesForecasting.Controllers
         {
             if (!_permissionService.Authorize(StandardPermissionProvider.ManageOrders))
                 return AccessDeniedView();
-            var results = JsonConvert.DeserializeObject<ForecastResponse[]>(resultsJson);
-            return Ok();
+            var results = JsonConvert.DeserializeObject<IEnumerable<ForecastResponse>>(resultsJson);
+            var stream = new MemoryStream();
+            var header = string.Join(';', new[]
+            {
+                "Majako.Plugin.Misc.SalesForecasting.ProductName",
+                "Majako.Plugin.Misc.SalesForecasting.ProductId",
+                "Majako.Plugin.Misc.SalesForecasting.Sku",
+                "Majako.Plugin.Misc.SalesForecasting.Prediction"
+            }.Select(_localizationService.GetResource));
+            using (var streamWriter = new StreamWriter(stream))
+            {
+                streamWriter.WriteLine(header);
+                foreach (var line in results)
+                    streamWriter.WriteLine($"{line.Name};{line.ProductId};{line.Sku};{line.Prediction}");
+            }
+            return File(stream.ToArray(), "application/csv", $"sales_forecast_{DateTime.UtcNow.ToShortDateString()}.csv");
         }
     }
 }
