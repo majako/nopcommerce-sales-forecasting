@@ -35,12 +35,9 @@ jobs:
         uses: actions/setup-dotnet@v1.8.1
         with:
           dotnet-version: 2.2.x
-      
-      - name: '[4.2] Restore nuget packages'
-        run: dotnet restore ./nopCommerce/src/NopCommerce.sln
-      
+            
       - name: '[4.2] Build plugin'
-        run: sudo dotnet publish ./nopCommerce/src/Misc.SalesForecasting/Majako.Plugin.Misc.SalesForecasting.csproj -c Release -o ./artifact/SalesForecasting/v4.2/Misc.SalesForecasting
+        run: dotnet publish ./nopCommerce/src/Misc.SalesForecasting/Majako.Plugin.Misc.SalesForecasting.csproj -c Release -o ./artifact/SalesForecasting/v4.2/Misc.SalesForecasting
         
       - name: '[4.2] Remove temp nopCommerce folder'
         run: rm -rf ./nopCommerce
