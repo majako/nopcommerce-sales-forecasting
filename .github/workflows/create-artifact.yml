@@ -45,7 +45,7 @@ jobs:
       # TODO: add other versions
       
       - name: Create plugins.json
-        run: touch ./artifact/uploadedItems.json
+        run: sudo touch ./artifact/uploadedItems.json
       
       - name: Write to plugins.json
         uses: finnp/create-file-action@master
