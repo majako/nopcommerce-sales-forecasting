@@ -37,20 +37,17 @@ jobs:
           dotnet-version: 2.2.x
             
       - name: '[4.2] Build plugin'
-        run: dotnet publish ./nopCommerce/src/Misc.SalesForecasting/Majako.Plugin.Misc.SalesForecasting.csproj -c Release -o artifact/SalesForecasting/v4.2/Misc.SalesForecasting
+        run: dotnet publish ./nopCommerce/src/Misc.SalesForecasting/Majako.Plugin.Misc.SalesForecasting.csproj -c Release -o '${{ GITHUB_WORKSPACE }}/artifact/SalesForecasting/v4.2/Misc.SalesForecasting'
         
       - name: '[4.2] Remove temp nopCommerce folder'
         run: rm -rf ./nopCommerce
       
       # TODO: add other versions
       
-      - name: Create plugins.json
-        run: cd artifact
-      
       - name: Write to plugins.json
         uses: finnp/create-file-action@master
         env:
-          FILE_NAME: ./uploadedItems.json
+          FILE_NAME: artifact/uploadedItems.json
           FILE_DATA: |
                       [
                         {
