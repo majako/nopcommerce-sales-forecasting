@@ -45,7 +45,7 @@ jobs:
       # TODO: add other versions
       
       - name: Create plugins.json
-        run: ls
+        run: echo | ls
       
       - name: Write to plugins.json
         uses: finnp/create-file-action@master
