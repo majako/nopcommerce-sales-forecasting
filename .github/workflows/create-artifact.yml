@@ -45,12 +45,12 @@ jobs:
       # TODO: add other versions
       
       - name: Create plugins.json
-        run: echo $(ls)
+        run: cd artifact
       
       - name: Write to plugins.json
         uses: finnp/create-file-action@master
         env:
-          FILE_NAME: ./artifact/uploadedItems.json
+          FILE_NAME: ./uploadedItems.json
           FILE_DATA: |
                       [
                         {
