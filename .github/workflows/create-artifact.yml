@@ -18,7 +18,7 @@ jobs:
       - name: '[4.2] Clone Majako.Plugin.Common'
         uses: actions/checkout@v2
         with:
-          token: '${{ secrets.MAJAKO_READ_PAT }}'
+          token: '${{ secrets.BUILD_READ_PAT }}'
           repository: 'majako/nopcommerce-plugin-common'
           ref: 'master'
           path: './nopCommerce/src/Libraries/Majako.Plugin.Common'
@@ -26,7 +26,7 @@ jobs:
       - name: '[4.2] Clone Misc.SalesForecasting'
         uses: actions/checkout@v2
         with:
-          token: '${{ secrets.MAJAKO_READ_PAT }}'
+          token: '${{ secrets.BUILD_READ_PAT }}'
           repository: 'majako/nopcommerce-sales-forecasting'
           ref: '4.2'
           path: './nopCommerce/src/Misc.SalesForecasting'
