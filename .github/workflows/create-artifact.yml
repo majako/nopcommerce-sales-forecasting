@@ -45,6 +45,9 @@ jobs:
       # TODO: add other versions
       
       - name: Create plugins.json
+        run: touch ./artifact/uploadedItems.json
+      
+      - name: Write to plugins.json
         uses: finnp/create-file-action@master
         env:
           FILE_NAME: ./artifact/uploadedItems.json
