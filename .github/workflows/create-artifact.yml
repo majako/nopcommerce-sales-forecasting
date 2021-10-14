@@ -1,0 +1,81 @@
+name: Create artifact
+
+on: 
+  workflow_dispatch:
+
+jobs:
+  create-artifact:
+    runs-on: ubuntu-latest
+  
+    steps:
+      - name: '[4.2] Clone nopCommerce'
+        uses: actions/checkout@v2
+        with:
+          repository: 'nopSolutions/nopCommerce'
+          ref: 'release-4.20'
+          path: './nopCommerce'
+      
+      - name: '[4.2] Clone Majako.Plugin.Common'
+        uses: actions/checkout@v2
+        with:
+          token: '${{ secrets.MAJAKO_READ_PAT }}'
+          repository: 'majako/nopcommerce-plugin-common'
+          ref: 'master'
+          path: './nopCommerce/src/Libraries/Majako.Plugin.Common'
+        
+      - name: '[4.2] Clone Misc.SalesForecasting'
+        uses: actions/checkout@v2
+        with:
+          token: '${{ secrets.MAJAKO_READ_PAT }}'
+          repository: 'majako/nopcommerce-sales-forecasting'
+          ref: '4.2'
+          path: './nopCommerce/src/Misc.SalesForecasting'
+          
+      - name: '[4.2] Install dotnet'
+        uses: actions/setup-dotnet@v1.8.1
+        with:
+          dotnet-version: 2.2.x
+      
+      - name: '[4.2] Restore nuget packages'
+        run: dotnet restore ./nopCommerce/src/NopCommerce.sln
+      
+      - name: '[4.2] Build plugin'
+        run: sudo dotnet publish ./nopCommerce/src/Misc.SalesForecasting/Majako.Plugin.Misc.SalesForecasting.csproj -c Release -o ./artifact/SalesForecasting/v4.2/Misc.SalesForecasting
+        
+      - name: '[4.2] Remove temp nopCommerce folder'
+        run: rm -rf ./nopCommerce
+      
+      # TODO: add other versions
+      
+      - name: Create plugins.json
+        uses: finnp/create-file-action@master
+        env:
+          FILE_NAME: ./artifact/uploadedItems.json
+          FILE_DATA: |
+                      [
+                        {
+                          "Type": "Plugin",
+                          "SupportedVersion": "4.20",
+                          "DirectoryPath": "SalesForecasting/v4.2/Misc.SalesForecasting/",
+                          "SystemName": "Misc.SalesForecasting"
+                        }
+                      ]
+        
+      - name: Get current date
+        id: date
+        run: echo "::set-output name=date::$(date +'%Y-%m-%d')"
+        
+      - name: Get generated UUID
+        id: generate-uuid
+        uses: filipstefansson/uuid-action@v1
+        with:
+          name: ${{ gihub.sha }}
+      
+      - name: Publish artifact
+        uses: actions/upload-artifact@v2.2.4
+        with:
+         name: Majako.SalesForecasting-${{ steps.date.outputs.date }}-${{ steps.generate-uuid.outputs.uuid }}
+         path: 
+          ./artifact/SalesForecasting
+          ./artifact/uploadedItems.json
+         if-no-files-found: error
