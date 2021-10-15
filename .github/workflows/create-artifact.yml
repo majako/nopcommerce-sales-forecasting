@@ -13,23 +13,23 @@ jobs:
         with:
           repository: 'nopSolutions/nopCommerce'
           ref: 'release-4.20'
-          path: '${{ github.workspace }}/nopCommerce'
+          path: ${{ github.workspace }}/nopCommerce
       
       - name: '[4.2] Clone Majako.Plugin.Common'
         uses: actions/checkout@v2
         with:
           token: '${{ secrets.BUILD_READ_PAT }}'
-          repository: 'majako/nopcommerce-plugin-common'
+          repository: majako/nopcommerce-plugin-common
           ref: 'master'
-          path: '${{ github.workspace }}/nopCommerce/src/Libraries/Majako.Plugin.Common'
+          path: ${{ github.workspace }}/nopCommerce/src/Libraries/Majako.Plugin.Common
         
       - name: '[4.2] Clone Misc.SalesForecasting'
         uses: actions/checkout@v2
         with:
           token: '${{ secrets.BUILD_READ_PAT }}'
-          repository: 'majako/nopcommerce-sales-forecasting'
+          repository: majako/nopcommerce-sales-forecasting
           ref: '4.2'
-          path: '${{ github.workspace }}/nopCommerce/src/Misc.SalesForecasting'
+          path: ${{ github.workspace }}/nopCommerce/src/Misc.SalesForecasting
           
       - name: '[4.2] Install dotnet'
         uses: actions/setup-dotnet@v1.8.1
@@ -37,20 +37,20 @@ jobs:
           dotnet-version: 2.2.x
             
       - name: '[4.2] Build plugin'
-        run: dotnet build '${{ github.workspace }}/nopCommerce/src/Misc.SalesForecasting/Majako.Plugin.Misc.SalesForecasting.csproj' -c Release
+        run: dotnet build ${{ github.workspace }}/nopCommerce/src/Misc.SalesForecasting/Majako.Plugin.Misc.SalesForecasting.csproj -c Release
         
       - name: '[4.2] Copy plugin to artifact'
-        run: cp -r '${{ github.workspace }}/nopCommerce/src/Presentation/Nop.Web/Plugins/Misc.SalesForecasting' '${{ github.workspace }}/artifact/SalesForecasting/v4.2/Misc.SalesForecasting'
+        run: mkdir -p ${{ github.workspace }}/nopCommerce/src/Presentation/Nop.Web/Plugins/Misc.SalesForecasting && cp -r ${{ github.workspace }}/nopCommerce/src/Presentation/Nop.Web/Plugins/Misc.SalesForecasting ${{ github.workspace }}/artifact/SalesForecasting/v4.2/Misc.SalesForecasting
         
       - name: '[4.2] Remove temp nopCommerce folder'
-        run: 'rm -rf ${{ github.workspace }}/nopCommerce'
+        run: rm -rf ${{ github.workspace }}/nopCommerce
       
       # TODO: add other versions
       
       - name: Write to plugins.json
         uses: finnp/create-file-action@master
         env:
-          FILE_NAME: '${{ github.workspace }}/artifact/uploadedItems.json'
+          FILE_NAME: ${{ github.workspace }}/artifact/uploadedItems.json
           FILE_DATA: |
                       [
                         {
