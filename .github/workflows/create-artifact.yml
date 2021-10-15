@@ -40,7 +40,7 @@ jobs:
         run: dotnet build ${{ github.workspace }}/nopCommerce/src/Misc.SalesForecasting/Majako.Plugin.Misc.SalesForecasting.csproj -c Release
         
       - name: '[4.2] Copy plugin to artifact'
-        run: mkdir -p ${{ github.workspace }}/artifact/SalesForecasting/v4.2/Misc.SalesForecasting && cp -r ${{ github.workspace }}/nopCommerce/src/Presentation/Nop.Web/Plugins/Misc.SalesForecasting ${{ github.workspace }}/artifact/SalesForecasting/v4.2/Misc.SalesForecasting
+        run: mkdir -p ${{ github.workspace }}/artifact/Majako.SalesForecasting/v4.2/Misc.SalesForecasting && cp -r ${{ github.workspace }}/nopCommerce/src/Presentation/Nop.Web/Plugins/Misc.SalesForecasting ${{ github.workspace }}/artifact/Majako.SalesForecasting/v4.2/Misc.SalesForecasting
         
       - name: '[4.2] Remove temp nopCommerce folder'
         run: rm -rf ${{ github.workspace }}/nopCommerce
@@ -56,7 +56,7 @@ jobs:
                         {
                           "Type": "Plugin",
                           "SupportedVersion": "4.20",
-                          "DirectoryPath": "SalesForecasting/v4.2/Misc.SalesForecasting/",
+                          "DirectoryPath": "Majako.SalesForecasting/v4.2/Misc.SalesForecasting/",
                           "SystemName": "Misc.SalesForecasting"
                         }
                       ]
@@ -74,7 +74,7 @@ jobs:
         run: echo "::set-output name=release-name::Majako.SalesForecasting-${{ steps.date.outputs.date }}-${{ steps.generate-uuid.outputs.uuid }}"
       
       - name: Zip release
-        run: zip -r ${{ github.workspace }}/artifact/${{ steps.release-name.outputs.release-name }}.zip ${{ github.workspace }}/artifact/*
+        run: cd ${{ github.workspace }}/artifact && zip -r ${{ steps.release-name.outputs.release-name }}.zip uploadedItems.json Majako.SalesForecasting
 
       - name: Create release
         uses: softprops/action-gh-release@v1
