@@ -40,7 +40,7 @@ jobs:
         run: dotnet build ${{ github.workspace }}/nopCommerce/src/Misc.SalesForecasting/Majako.Plugin.Misc.SalesForecasting.csproj -c Release
         
       - name: '[4.2] Copy plugin to artifact'
-        run: mkdir -p ${{ github.workspace }}/artifact/Majako.SalesForecasting/v4.2/Misc.SalesForecasting && cp -r ${{ github.workspace }}/nopCommerce/src/Presentation/Nop.Web/Plugins/Misc.SalesForecasting ${{ github.workspace }}/artifact/Majako.SalesForecasting/v4.2/Misc.SalesForecasting
+        run: mkdir -p ${{ github.workspace }}/artifact/Majako.SalesForecasting/v4.2 && cp -r ${{ github.workspace }}/nopCommerce/src/Presentation/Nop.Web/Plugins/Misc.SalesForecasting ${{ github.workspace }}/artifact/Majako.SalesForecasting/v4.2/Misc.SalesForecasting
         
       - name: '[4.2] Remove temp nopCommerce folder'
         run: rm -rf ${{ github.workspace }}/nopCommerce
