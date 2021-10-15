@@ -40,7 +40,7 @@ jobs:
         run: dotnet build '${{ github.workspace }}/nopCommerce/src/Misc.SalesForecasting/Majako.Plugin.Misc.SalesForecasting.csproj' -c Release
         
       - name: '[4.2] Copy plugin to artifact'
-        run: cp '${{ github.workspace }}/nopCommerce/src/Presentation/Nop.Web/Plugins/Misc.SalesForecasting' '${{ github.workspace }}/artifact/SalesForecasting/v4.2/Misc.SalesForecasting'
+        run: cp -r '${{ github.workspace }}/nopCommerce/src/Presentation/Nop.Web/Plugins/Misc.SalesForecasting' '${{ github.workspace }}/artifact/SalesForecasting/v4.2/Misc.SalesForecasting'
         
       - name: '[4.2] Remove temp nopCommerce folder'
         run: 'rm -rf ${{ github.workspace }}/nopCommerce'
@@ -69,9 +69,15 @@ jobs:
         id: generate-uuid
         uses: filipstefansson/uuid-action@v1
       
-      - name: Publish artifact
-        uses: actions/upload-artifact@v2.2.4
+#      - name: Publish artifact
+#        uses: actions/upload-artifact@v2.2.4
+#        with:
+#         name: Majako.SalesForecasting-${{ steps.date.outputs.date }}-${{ steps.generate-uuid.outputs.uuid }}
+#         path: '${{ github.workspace }}/artifact/**/*'
+#         if-no-files-found: error
+
+      - name: Create release
+        uses: softprops/action-gh-release@v1
         with:
          name: Majako.SalesForecasting-${{ steps.date.outputs.date }}-${{ steps.generate-uuid.outputs.uuid }}
-         path: '${{ github.workspace }}/artifact/**/*'
-         if-no-files-found: error
+         files: ${{ github.workspace }}/artifact/**/*
