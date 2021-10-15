@@ -13,7 +13,7 @@ jobs:
         with:
           repository: 'nopSolutions/nopCommerce'
           ref: 'release-4.20'
-          path: '/nopCommerce'
+          path: '${{ github.workspace }}/nopCommerce'
       
       - name: '[4.2] Clone Majako.Plugin.Common'
         uses: actions/checkout@v2
@@ -21,7 +21,7 @@ jobs:
           token: '${{ secrets.BUILD_READ_PAT }}'
           repository: 'majako/nopcommerce-plugin-common'
           ref: 'master'
-          path: '/nopCommerce/src/Libraries/Majako.Plugin.Common'
+          path: '${{ github.workspace }}/nopCommerce/src/Libraries/Majako.Plugin.Common'
         
       - name: '[4.2] Clone Misc.SalesForecasting'
         uses: actions/checkout@v2
@@ -29,7 +29,7 @@ jobs:
           token: '${{ secrets.BUILD_READ_PAT }}'
           repository: 'majako/nopcommerce-sales-forecasting'
           ref: '4.2'
-          path: '/nopCommerce/src/Misc.SalesForecasting'
+          path: '${{ github.workspace }}/nopCommerce/src/Misc.SalesForecasting'
           
       - name: '[4.2] Install dotnet'
         uses: actions/setup-dotnet@v1.8.1
@@ -37,17 +37,17 @@ jobs:
           dotnet-version: 2.2.x
             
       - name: '[4.2] Build plugin'
-        run: dotnet publish /nopCommerce/src/Misc.SalesForecasting/Majako.Plugin.Misc.SalesForecasting.csproj -c Release -o /artifact/SalesForecasting/v4.2/Misc.SalesForecasting
+        run: dotnet publish '${{ github.workspace }}/nopCommerce/src/Misc.SalesForecasting/Majako.Plugin.Misc.SalesForecasting.csproj' -c Release -o '${{ github.workspace }}/artifact/SalesForecasting/v4.2/Misc.SalesForecasting'
         
       - name: '[4.2] Remove temp nopCommerce folder'
-        run: rm -rf /nopCommerce
+        run: 'rm -rf ${{ github.workspace }}/nopCommerce'
       
       # TODO: add other versions
       
       - name: Write to plugins.json
         uses: finnp/create-file-action@master
         env:
-          FILE_NAME: /artifact/uploadedItems.json
+          FILE_NAME: '${{ github.workspace }}/artifact/uploadedItems.json'
           FILE_DATA: |
                       [
                         {
@@ -70,7 +70,7 @@ jobs:
         uses: actions/upload-artifact@v2.2.4
         with:
          name: Majako.SalesForecasting-${{ steps.date.outputs.date }}-${{ steps.generate-uuid.outputs.uuid }}
-         path: 
-          /artifact/SalesForecasting
-          /artifact/uploadedItems.json
+         path: |
+          '${{ github.workspace }}/artifact/SalesForecasting'
+          '${{ github.workspace }}/artifact/uploadedItems.json'
          if-no-files-found: error
