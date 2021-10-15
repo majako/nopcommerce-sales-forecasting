@@ -98,7 +98,8 @@ namespace Majako.Plugin.Misc.SalesForecasting.Controllers
             var forecast = await _salesForecastingService.ForecastAsync(searchModel).ConfigureAwait(false);
             var resultModel = new ForecastResultModel
             {
-                ResultsJson = JsonConvert.SerializeObject(forecast, _jsonSerializerSettings)
+                ResultsJson = JsonConvert.SerializeObject(forecast, _jsonSerializerSettings),
+                SearchModel = searchModel
             };
             resultModel.SetGridPageSize();
             return View("~/Plugins/Misc.SalesForecasting/Views/ForecastResults.cshtml", resultModel);

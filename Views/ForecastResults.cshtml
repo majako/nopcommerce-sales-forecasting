@@ -57,6 +57,11 @@
         <div class="panel-group">
             <div class="panel panel-default">
                 <div class="panel-body">
+                    @await Html.PartialAsync("ForecastSearch.cshtml", Model.SearchModel)
+                </div>
+            </div>
+            <div class="panel panel-default">
+                <div class="panel-body">
                     @await Html.PartialAsync("Table", tableModel)
                 </div>
 

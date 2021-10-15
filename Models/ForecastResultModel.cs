@@ -11,6 +11,7 @@ namespace Majako.Plugin.Misc.SalesForecasting.Models
     public class ForecastResultModel : BaseSearchModel
     {
         public string ResultsJson { get; set; }
+        public ForecastSearchModel SearchModel { get; set; }
 
         public ForecastResultModel()
         {
