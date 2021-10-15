@@ -37,7 +37,7 @@ jobs:
           dotnet-version: 2.2.x
             
       - name: '[4.2] Build plugin'
-        run: dotnet publish '${{ github.workspace }}/nopCommerce/src/Misc.SalesForecasting/Majako.Plugin.Misc.SalesForecasting.csproj' -c Release -o '${{ github.workspace }}/artifact/SalesForecasting/v4.2/Misc.SalesForecasting'
+        run: dotnet build '${{ github.workspace }}/nopCommerce/src/Misc.SalesForecasting/Majako.Plugin.Misc.SalesForecasting.csproj' -c Release -o '${{ github.workspace }}/artifact/SalesForecasting/v4.2/Misc.SalesForecasting'
         
       - name: '[4.2] Remove temp nopCommerce folder'
         run: 'rm -rf ${{ github.workspace }}/nopCommerce'
