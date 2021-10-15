@@ -70,7 +70,5 @@ jobs:
         uses: actions/upload-artifact@v2.2.4
         with:
          name: Majako.SalesForecasting-${{ steps.date.outputs.date }}-${{ steps.generate-uuid.outputs.uuid }}
-         path: |
-          '${{ github.workspace }}/artifact/SalesForecasting'
-          '${{ github.workspace }}/artifact/uploadedItems.json'
+         path: '${{ github.workspace }}/artifact/**/*'
          if-no-files-found: error
