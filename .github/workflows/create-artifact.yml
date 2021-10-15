@@ -76,8 +76,14 @@ jobs:
 #         path: '${{ github.workspace }}/artifact/**/*'
 #         if-no-files-found: error
 
+#      - name: Create release
+#        uses: softprops/action-gh-release@v1
+#        with:
+#         name: Majako.SalesForecasting-${{ steps.date.outputs.date }}-${{ steps.generate-uuid.outputs.uuid }}
+#         files: ${{ github.workspace }}/artifact/**/*
+
       - name: Create release
-        uses: softprops/action-gh-release@v1
+        uses: actions/create-release@latest
         with:
-         name: Majako.SalesForecasting-${{ steps.date.outputs.date }}-${{ steps.generate-uuid.outputs.uuid }}
-         files: ${{ github.workspace }}/artifact/**/*
+          tag_name: Majako.SalesForecasting-${{ steps.date.outputs.date }}-${{ steps.generate-uuid.outputs.uuid }}
+          release_name: Majako.SalesForecasting-${{ steps.date.outputs.date }}-${{ steps.generate-uuid.outputs.uuid }}
