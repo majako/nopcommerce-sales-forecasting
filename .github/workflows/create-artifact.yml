@@ -74,10 +74,7 @@ jobs:
         run: echo "::set-output name=release-name::Majako.SalesForecasting-${{ steps.date.outputs.date }}-${{ steps.generate-uuid.outputs.uuid }}"
       
       - name: Zip release
-        uses: thedoctor0/zip-release@master
-        with:
-          path: ${{ github.workspace }}/artifact/**/*
-          filename: ${{ github.workspace }}/artifact/${{ steps.release-name.outputs.release-name }}.zip
+        run: zip -r ${{ github.workspace }}/artifact/${{ steps.release-name.outputs.release-name }}.zip ${{ github.workspace }}/artifact/*
 
       - name: Create release
         uses: softprops/action-gh-release@v1
