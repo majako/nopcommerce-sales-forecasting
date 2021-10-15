@@ -55,11 +55,8 @@
 <div class="content">
     <div class="form-horizontal">
         <div class="panel-group">
-            <div class="panel panel-default">
-                <div class="panel-body">
-                    @await Html.PartialAsync("ForecastSearch.cshtml", Model.SearchModel)
-                </div>
-            </div>
+            @await Html.PartialAsync("ForecastSearchPanel.cshtml", Model.SearchModel)
+
             <div class="panel panel-default">
                 <div class="panel-body">
                     @await Html.PartialAsync("Table", tableModel)
