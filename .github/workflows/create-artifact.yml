@@ -69,31 +69,20 @@ jobs:
         id: generate-uuid
         uses: filipstefansson/uuid-action@v1
       
-#      - name: Publish artifact
-#        uses: actions/upload-artifact@v2.2.4
-#        with:
-#         name: Majako.SalesForecasting-${{ steps.date.outputs.date }}-${{ steps.generate-uuid.outputs.uuid }}
-#         path: '${{ github.workspace }}/artifact/**/*'
-#         if-no-files-found: error
-
+      - name: Create release name
+        id: release-name
+        run: echo "::set-output name=release-name::Majako.SalesForecasting-${{ steps.date.outputs.date }}-${{ steps.generate-uuid.outputs.uuid }}"
+      
       - name: Zip release
         uses: thedoctor0/zip-release@master
         with:
           path: ${{ github.workspace }}/artifact/**/*
-          filename: ${{ github.workspace }}/artifact/Majako.SalesForecasting-${{ steps.date.outputs.date }}-${{ steps.generate-uuid.outputs.uuid }}.zip
+          filename: ${{ github.workspace }}/artifact/${{ steps.release-name.outputs.release-name }}.zip
 
       - name: Create release
         uses: softprops/action-gh-release@v1
         with:
-         name: Majako.SalesForecasting-${{ steps.date.outputs.date }}-${{ steps.generate-uuid.outputs.uuid }}
-         tag_name: Majako.SalesForecasting-${{ steps.date.outputs.date }}-${{ steps.generate-uuid.outputs.uuid }}
-         files: ${{ github.workspace }}/artifact/Majako.SalesForecasting-${{ steps.date.outputs.date }}-${{ steps.generate-uuid.outputs.uuid }}.zip
+         name: ${{ steps.release-name.outputs.release-name }}
+         tag_name: ${{ steps.release-name.outputs.release-name }}
+         files: ${{ github.workspace }}/artifact/${{ steps.release-name.outputs.release-name }}.zip
          fail_on_unmatched_files: true
-
-#      - name: Create release
-#        uses: actions/create-release@latest
-#        env:
-#          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # This token is provided by Actions, you do not need to create your own token
-#        with:
-#          tag_name: Majako.SalesForecasting-${{ steps.date.outputs.date }}-${{ steps.generate-uuid.outputs.uuid }}
-#          release_name: Majako.SalesForecasting-${{ steps.date.outputs.date }}-${{ steps.generate-uuid.outputs.uuid }}
