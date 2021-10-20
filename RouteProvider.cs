@@ -6,14 +6,14 @@ namespace Majako.Plugin.Misc.SalesForecasting
 {
     public partial class RouteProvider : IRouteProvider
     {
-        public void RegisterRoutes(IRouteBuilder routeBuilder)
+        public void RegisterRoutes(IEndpointRouteBuilder endpointRouteBuilder)
         {
-            routeBuilder.MapRoute("Plugin.Misc.SalesForecasting.Admin.Configure",
+            endpointRouteBuilder.MapControllerRoute("Plugin.Misc.SalesForecasting.Admin.Configure",
                 "Admin/SalesForecasting/Configure",
                 new { controller = "SalesForecasting", action = "Configure" }
             );
 
-            routeBuilder.MapRoute("Plugin.Misc.SalesForecasting.Admin.Forecast",
+            endpointRouteBuilder.MapControllerRoute("Plugin.Misc.SalesForecasting.Admin.Forecast",
                  "Admin/SalesForecasting/Forecast",
                  new { controller = "SalesForecasting", action = "Forecast" }
             );

@@ -4,7 +4,6 @@ using System.Linq;
 using System.Net.Http;
 using System.Net.Http.Headers;
 using Majako.Plugin.Misc.SalesForecasting.Models;
-using Nop.Core.Data;
 using Nop.Core.Http;
 using Nop.Core.Domain.Catalog;
 using Nop.Core.Domain.Orders;
@@ -14,6 +13,7 @@ using Nop.Web.Areas.Admin.Models.Catalog;
 using System.Threading.Tasks;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Serialization;
+using Nop.Data;
 
 namespace Majako.Plugin.Misc.SalesForecasting.Services
 {
