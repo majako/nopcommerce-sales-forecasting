@@ -1,13 +1,13 @@
-using Nop.Web.Framework.Models;
+﻿using Nop.Web.Framework.Models;
 using Nop.Core.Domain.Catalog;
 
 namespace Majako.Plugin.Misc.SalesForecasting.Models
 {
-    public class ForecastListModel : BasePagedListModel<ForecastResponse>
+    public record ForecastListModel : BasePagedListModel<ForecastResponse>
     {
     }
 
-    public class ForecastResponse : BaseNopEntityModel
+    public record ForecastResponse : BaseNopEntityModel
     {
         public string ProductId { get; set; }
         public string Name { get; set; }

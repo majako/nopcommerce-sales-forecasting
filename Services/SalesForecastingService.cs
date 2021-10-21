@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net.Http;
@@ -74,8 +74,8 @@ namespace Majako.Plugin.Misc.SalesForecasting.Services
 
         public async Task<IEnumerable<ForecastResponse>> ForecastAsync(ForecastSearchModel productSearchModel, DateTime? until = null)
         {
-            var settings = _settingService.LoadSetting<SalesForecastingPluginSettings>();
-            var products = GetProductsFromSearch(productSearchModel);
+            var settings = await _settingService.LoadSettingAsync<SalesForecastingPluginSettings>();
+            var products = await GetProductsFromSearch(productSearchModel);
             var data = GetData(products.Select(p => p.Id).ToArray());
             if (until != null)
                 data = data.Where(s => s.Created <= until);
@@ -116,7 +116,7 @@ namespace Majako.Plugin.Misc.SalesForecasting.Services
             });
         }
 
-        private IEnumerable<Product> GetProductsFromSearch(ProductSearchModel productSearchModel)
+        private async Task<IEnumerable<Product>> GetProductsFromSearch(ProductSearchModel productSearchModel)
         {
             var categoryIds = new List<int>();
             if (productSearchModel.SearchCategoryId > 0)
@@ -125,7 +125,7 @@ namespace Majako.Plugin.Misc.SalesForecasting.Services
 
                 if (productSearchModel.SearchIncludeSubCategories)
                 {
-                    var childCategoryIds = _categoryService.GetChildCategoryIds(parentCategoryId: productSearchModel.SearchCategoryId, showHidden: false);
+                    var childCategoryIds = await _categoryService.GetChildCategoryIdsAsync(parentCategoryId: productSearchModel.SearchCategoryId, showHidden: false);
                     categoryIds.AddRange(childCategoryIds);
                 }
             }
@@ -139,10 +139,10 @@ namespace Majako.Plugin.Misc.SalesForecasting.Services
                     overridePublished = false;
             }
 
-            return _productService.SearchProducts(
+            return await _productService.SearchProductsAsync(
                 showHidden: true,
                 categoryIds: categoryIds,
-                manufacturerId: productSearchModel.SearchManufacturerId,
+                manufacturerIds: new List<int> { productSearchModel.SearchManufacturerId },
                 storeId: productSearchModel.SearchStoreId,
                 productType: productSearchModel.SearchProductTypeId > 0 ? (ProductType?)productSearchModel.SearchProductTypeId : null,
                 keywords: productSearchModel.SearchProductName,

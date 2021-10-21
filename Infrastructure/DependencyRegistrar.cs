@@ -1,5 +1,6 @@
 ﻿using Autofac;
 using Majako.Plugin.Misc.SalesForecasting.Services;
+using Microsoft.Extensions.DependencyInjection;
 using Nop.Core.Configuration;
 using Nop.Core.Infrastructure;
 using Nop.Core.Infrastructure.DependencyManagement;
@@ -8,10 +9,10 @@ namespace Majako.Plugin.Misc.SalesForecasting.Infrastructure
 {
     public class DependencyRegistrar : IDependencyRegistrar
     {
-        public virtual void Register(ContainerBuilder builder, ITypeFinder typeFinder, NopConfig config)
+        public void Register(IServiceCollection services, ITypeFinder typeFinder, AppSettings appSettings)
         {
             // services
-            builder.RegisterType<SalesForecastingService>().InstancePerLifetimeScope();
+            services.AddScoped<SalesForecastingService>();
         }
 
         public int Order => 1;

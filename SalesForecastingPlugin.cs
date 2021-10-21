@@ -8,6 +8,7 @@ using Nop.Services.Plugins;
 using Nop.Services.Tasks;
 using NUglify.Helpers;
 using Nop.Web.Framework.Menu;
+using Task = System.Threading.Tasks.Task;
 
 namespace Majako.Plugin.Misc.SalesForecasting
 {
@@ -28,7 +29,7 @@ namespace Majako.Plugin.Misc.SalesForecasting
             return $"{_webHelper.GetStoreLocation()}Admin/SalesForecasting/Configure";
         }
 
-        public void ManageSiteMap(SiteMapNode rootNode)
+        public async Task ManageSiteMapAsync(SiteMapNode rootNode)
         {
             var salesNode = rootNode.ChildNodes.FirstOrDefault(x => x.SystemName == "Sales");
             if (salesNode == null) return;
@@ -42,16 +43,6 @@ namespace Majako.Plugin.Misc.SalesForecasting
                 IconClass = "fa-dot-circle-o",
                 SystemName = "Order.SalesForecasting"
             });
-        }
-
-        public override void Install()
-        {
-            base.Install();
-        }
-
-        public override void Uninstall()
-        {
-            base.Uninstall();
         }
     }
 }
