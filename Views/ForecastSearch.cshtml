@@ -15,7 +15,7 @@
 </div>
 
 <form asp-controller="SalesForecasting" asp-action="Forecast" method="post">
-    <div class="content">
+    <section class="content">
         @await Html.PartialAsync("ForecastSearchPanel.cshtml", Model)
-    </div>
+    </section>
 </form>

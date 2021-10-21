@@ -11,14 +11,15 @@
 </div>
 
 <form asp-controller="SalesForecasting" asp-action="Forecast" method="post">
-    <div class="form-horizontal">
-        <div class="panel panel-default">
-            <div class="panel-body">
+    <section class="content">
+        <div class="container-fluid">	
+        <div class="card card-default">
+            <div class="card-body">
                 @await Html.PartialAsync("ProductSearch.cshtml", Model)
 
-                <div class="panel-body row">
+                <div class="card-body row">
                     <div class="col-md-5">
-                        <div class="form-group">
+                        <div class="form-group row">
                             <div class="col-md-4">
                                 <nop-label asp-for="PeriodLength" />
                             </div>
@@ -38,4 +39,5 @@
             </div>
         </div>
     </div>
+    </section>
 </form>
