@@ -38,7 +38,13 @@ namespace Majako.Plugin.Misc.SalesForecasting.Services
         {
             public IDictionary<string, float> BestParams { get; set; }
             public float BestScore { get; set; }
-            public IDictionary<string, int> Predictions { get; set; }
+            public IList<PredictionItem> Predictions { get; set; }
+        }
+
+        public class PredictionItem 
+        { 
+            public string ProductId { get; set; }
+            public int Quantity { get; set; }
         }
 
         private const string BASE_URL = "https://majako-sales-forecasting.azurewebsites.net/";
@@ -89,8 +95,10 @@ namespace Majako.Plugin.Misc.SalesForecasting.Services
             var requestContent = new StringContent(JsonConvert.SerializeObject(request, _jsonSerializerSettings));
             requestContent.Headers.ContentType = MediaTypeHeaderValue.Parse("application/json");
             var response = await _httpClient.PostAsync($"{BASE_URL}forecast", requestContent).ConfigureAwait(false);
-            var content = JsonConvert.DeserializeObject<RawForecastResponse>(await response.Content.ReadAsStringAsync().ConfigureAwait(false));
-            return products.Select(p => new ForecastResponse(p, content.Predictions.TryGetValue(p.Id.ToString(), out var prediction) ? prediction : 0));
+            var result = await response.Content.ReadAsStringAsync();
+
+            var content = JsonConvert.DeserializeObject<RawForecastResponse>(result);
+            return products.Select(p => new ForecastResponse(p, content.Predictions.FirstOrDefault(prediction => prediction.ProductId == p.Id.ToString())?.Quantity ?? 0));
         }
 
         private IEnumerable<Sale> GetData(int[] productIds)
