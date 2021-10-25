@@ -8,6 +8,9 @@ jobs:
     runs-on: ubuntu-latest
   
     steps:
+    
+    ####### 4.2 #######
+    
       - name: '[4.2] Clone nopCommerce'
         uses: actions/checkout@v2
         with:
@@ -44,7 +47,9 @@ jobs:
         
       - name: '[4.2] Remove temp nopCommerce folder'
         run: rm -rf ${{ github.workspace }}/nopCommerce
-        
+
+    ####### 4.3 #######
+
       - name: '[4.3] Clone nopCommerce'
         uses: actions/checkout@v2
         with:
@@ -58,7 +63,7 @@ jobs:
           token: '${{ secrets.BUILD_READ_PAT }}'
           repository: majako/nopcommerce-plugin-common
           ref: 'v4.3'
-          path: ${{ github.workspace }}/nopCommerce/src/Libraries/Majako.Plugin.Common
+          path: ${{ github.workspace }}/nopCommerce/src/Libraries/nopcommerce-plugin-common
         
       - name: '[4.3] Clone Misc.SalesForecasting'
         uses: actions/checkout@v2
@@ -82,6 +87,8 @@ jobs:
       - name: '[4.3] Remove temp nopCommerce folder'
         run: rm -rf ${{ github.workspace }}/nopCommerce
       
+    ####### 4.4 #######
+      
       - name: '[4.4] Clone nopCommerce'
         uses: actions/checkout@v2
         with:
@@ -95,7 +102,7 @@ jobs:
           token: '${{ secrets.BUILD_READ_PAT }}'
           repository: majako/nopcommerce-plugin-common
           ref: 'v4.4'
-          path: ${{ github.workspace }}/nopCommerce/src/Libraries/Majako.Plugin.Common
+          path: ${{ github.workspace }}/nopCommerce/src/Libraries/nopcommerce-plugin-common
         
       - name: '[4.4] Clone Misc.SalesForecasting'
         uses: actions/checkout@v2
