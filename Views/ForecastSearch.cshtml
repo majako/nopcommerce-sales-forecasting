@@ -8,14 +8,13 @@
     Layout = "~/Areas/Admin/Views/Shared/_AdminLayout.cshtml";
 }
 
-<div class="content-header clearfix">
-    <h1 class="pull-left">
-        @T("Majako.Plugin.Misc.SalesForecasting.SalesForecasting")
-    </h1>
-</div>
 
 <form asp-controller="SalesForecasting" asp-action="Forecast" method="post">
     <section class="content">
-        @await Html.PartialAsync("ForecastSearchPanel.cshtml", Model)
+        <div class="form-horizontal">
+            <div class="card-group">
+                @await Html.PartialAsync("ForecastSearchPanel.cshtml", Model)
+            </div>
+        </div>
     </section>
 </form>
