@@ -119,6 +119,9 @@ jobs:
             
       - name: '[4.4] Build plugin'
         run: dotnet build ${{ github.workspace }}/nopCommerce/src/Misc.SalesForecasting/Majako.Plugin.Misc.SalesForecasting.csproj -c Release
+      
+      - name: '[4.4] Remove runtimes folder'
+        run: rm -rf ${{ github.workspace }}/nopCommerce/src/Presentation/Nop.Web/Plugins/Misc.SalesForecasting/runtimes
         
       - name: '[4.4] Copy plugin to artifact'
         run: mkdir -p ${{ github.workspace }}/artifact/Majako.SalesForecasting/v4.4 && cp -r ${{ github.workspace }}/nopCommerce/src/Presentation/Nop.Web/Plugins/Misc.SalesForecasting ${{ github.workspace }}/artifact/Majako.SalesForecasting/v4.4/Misc.SalesForecasting
