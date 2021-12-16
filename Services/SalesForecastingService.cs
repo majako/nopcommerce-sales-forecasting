@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net;
 using System.Net.Http;
 using System.Net.Http.Headers;
 using Majako.Plugin.Misc.SalesForecasting.Models;
@@ -12,6 +13,7 @@ using Nop.Services.Catalog;
 using Nop.Services.Configuration;
 using Nop.Web.Areas.Admin.Models.Catalog;
 using System.Threading.Tasks;
+using System.Threading;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Serialization;
 
@@ -39,6 +41,11 @@ namespace Majako.Plugin.Misc.SalesForecasting.Services
             public IDictionary<string, float> BestParams { get; set; }
             public float BestScore { get; set; }
             public IDictionary<string, int> Predictions { get; set; }
+        }
+
+        public class ForecastSubmittedResponse
+        {
+            public string Id { get; set; }
         }
 
         private const string BASE_URL = "https://majako-sales-forecasting.azurewebsites.net/";
@@ -89,8 +96,17 @@ namespace Majako.Plugin.Misc.SalesForecasting.Services
             var requestContent = new StringContent(JsonConvert.SerializeObject(request, _jsonSerializerSettings));
             requestContent.Headers.ContentType = MediaTypeHeaderValue.Parse("application/json");
             var response = await _httpClient.PostAsync($"{BASE_URL}forecast", requestContent).ConfigureAwait(false);
-            var content = JsonConvert.DeserializeObject<RawForecastResponse>(await response.Content.ReadAsStringAsync().ConfigureAwait(false));
-            return products.Select(p => new ForecastResponse(p, content.Predictions.TryGetValue(p.Id.ToString(), out var prediction) ? prediction : 0));
+            var forecastId = JsonConvert.DeserializeObject<ForecastSubmittedResponse>(await response.Content.ReadAsStringAsync().ConfigureAwait(false)).Id;
+            while (true)
+            {
+              Thread.Sleep(5000);
+              var getForecastResponse = await _httpClient.GetAsync($"{BASE_URL}forecast/{forecastId}").ConfigureAwait(false);
+              if (getForecastResponse.StatusCode == HttpStatusCode.OK)
+              {
+                var content = JsonConvert.DeserializeObject<RawForecastResponse>(await response.Content.ReadAsStringAsync().ConfigureAwait(false));
+                return products.Select(p => new ForecastResponse(p, content.Predictions.TryGetValue(p.Id.ToString(), out var prediction) ? prediction : 0));
+              }
+            }
         }
 
         private IEnumerable<Sale> GetData(int[] productIds)
