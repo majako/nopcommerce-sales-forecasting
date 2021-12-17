@@ -55,8 +55,6 @@
 <div class="content">
     <div class="form-horizontal">
         <div class="panel-group">
-            @await Html.PartialAsync("ForecastSearchPanel.cshtml", Model.SearchModel)
-
             <div class="panel panel-default">
                 <div class="panel-body">
                     @await Html.PartialAsync("Table", tableModel)
@@ -66,7 +64,7 @@
                     <div class="col-md-6">
                         <div class="form-group">
                             <div class="col-md-8 col-md-offset-4">
-                                @using(@Html.BeginForm("ExportCsv", "SalesForecasting", new { resultsJson = Model.ResultsJson }, FormMethod.Post))
+                                @using(@Html.BeginForm("ExportCsv", "SalesForecasting", FormMethod.Post))
                                 {
                                     <button type="submit" class="btn bg-olive" id="export-csv">
                                         <i class="fa fa-download"></i>

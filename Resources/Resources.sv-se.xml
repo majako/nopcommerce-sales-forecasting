@@ -33,4 +33,16 @@
     <LocaleResource Name="Majako.Plugin.Misc.SalesForecasting.PeriodLength">
         <Value>Periodlängd</Value>
     </LocaleResource>
+    <LocaleResource Name="Majako.Plugin.Misc.SalesForecasting.ForecastReady">
+        <Value>Din försäljningsprognos är klar!</Value>
+    </LocaleResource>
+    <LocaleResource Name="Majako.Plugin.Misc.SalesForecasting.ForecastFailed">
+        <Value>Försäljningsprognos misslyckades. Var vänlig försök igen eller kontakta support@majako.se.</Value>
+    </LocaleResource>
+    <LocaleResource Name="Majako.Plugin.Misc.SalesForecasting.ForecastSubmitted">
+        <Value>Din prognosbegäran har skickats, och du informeras när prognosen är klar. Detta tar vanligen ett par minuter.</Value>
+    </LocaleResource>
+    <LocaleResource Name="Majako.Plugin.Misc.SalesForecasting.ForecastNotFound">
+        <Value>Den begärda prognosen kunde inte hittas. Var vänlig försök igen.</Value>
+    </LocaleResource>
 </Language>
