@@ -1,5 +1,4 @@
-﻿using System.Collections.Generic;
-using System.Linq;
+﻿using System.Linq;
 using System.Threading.Tasks;
 using Majako.Plugin.Misc.SalesForecasting.Services;
 using Majako.Plugin.Misc.SalesForecasting.Models;
@@ -175,7 +174,7 @@ namespace Majako.Plugin.Misc.SalesForecasting.Controllers
         {
             if (!_permissionService.Authorize(StandardPermissionProvider.ManageOrders))
                 return AccessDeniedView();
-            
+
             var settings = _settingService.LoadSetting<SalesForecastingPluginSettings>();
             var forecast = await _salesForecastingService.GetForecastAsync().ConfigureAwait(false);
             var stream = new MemoryStream();
