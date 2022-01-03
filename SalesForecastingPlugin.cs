@@ -13,7 +13,10 @@ namespace Majako.Plugin.Misc.SalesForecasting
 {
     public class SalesForecastingPlugin : BasePlugin, IMiscPlugin, IAdminMenuPlugin
     {
-        public const string SystemName = "Misc.SalesForecasting";
+        public const string SYSTEM_NAME = "Misc.SalesForecasting";
+        public const string BASE_ROUTE = "Admin/SalesForecasting";
+        public const string CONFIGURE = "Configure";
+        public const string FORECAST = "Forecast";
 
         private readonly IWebHelper _webHelper;
 
@@ -25,7 +28,7 @@ namespace Majako.Plugin.Misc.SalesForecasting
 
         public override string GetConfigurationPageUrl()
         {
-            return $"{_webHelper.GetStoreLocation()}Admin/SalesForecasting/Configure";
+            return $"{_webHelper.GetStoreLocation()}{BASE_ROUTE}/{CONFIGURE}";
         }
 
         public void ManageSiteMap(SiteMapNode rootNode)
@@ -36,7 +39,7 @@ namespace Majako.Plugin.Misc.SalesForecasting
             {
                 // Title = _localizationService.GetResource("Majako.Plugin.Misc.SalesForecasting"),
                 Title = "Försäljningsprognoser",
-                Url = "/Admin/SalesForecasting/Forecast",
+                Url = $"/{BASE_ROUTE}/{FORECAST}",
                 Visible = true,
                 RouteValues = new RouteValueDictionary { { "Area", "Admin" } },
                 IconClass = "fa-dot-circle-o",

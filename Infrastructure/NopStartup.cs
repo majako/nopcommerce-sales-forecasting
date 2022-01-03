@@ -19,7 +19,7 @@ namespace Majako.Plugin.Misc.SalesForecasting.Infrastructure
         public void Configure(IApplicationBuilder application)
         {
             var localizationService = EngineContext.Current.Resolve<ILocalizationService>();
-            localizationService.InstallXmlLocaleResources("sv-se", SalesForecastingPlugin.SystemName);
+            localizationService.InstallXmlLocaleResources("sv-se", SalesForecastingPlugin.SYSTEM_NAME);
         }
 
         public int Order => 2000;

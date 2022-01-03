@@ -9,12 +9,12 @@ namespace Majako.Plugin.Misc.SalesForecasting
         public void RegisterRoutes(IRouteBuilder routeBuilder)
         {
             routeBuilder.MapRoute("Plugin.Misc.SalesForecasting.Admin.Configure",
-                "Admin/SalesForecasting/Configure",
+                $"{SalesForecastingPlugin.BASE_ROUTE}/{SalesForecastingPlugin.CONFIGURE}",
                 new { controller = "SalesForecasting", action = "Configure" }
             );
 
             routeBuilder.MapRoute("Plugin.Misc.SalesForecasting.Admin.Forecast",
-                 "Admin/SalesForecasting/Forecast",
+                 $"{SalesForecastingPlugin.BASE_ROUTE}/{SalesForecastingPlugin.FORECAST}",
                  new { controller = "SalesForecasting", action = "Forecast" }
             );
         }
