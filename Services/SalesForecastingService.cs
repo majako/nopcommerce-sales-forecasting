@@ -5,7 +5,7 @@ using System.Net;
 using System.Net.Http;
 using System.Net.Http.Headers;
 using Majako.Plugin.Misc.SalesForecasting.Models;
-using Nop.Core.Data;
+using Nop.Data;
 using Nop.Core.Http;
 using Nop.Core.Domain.Catalog;
 using Nop.Core.Domain.Orders;

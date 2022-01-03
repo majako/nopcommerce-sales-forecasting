@@ -74,7 +74,6 @@ namespace Majako.Plugin.Misc.SalesForecasting.Controllers
 
         [HttpPost]
         [AuthorizeAdmin]
-        [AdminAntiForgery]
         [Area(AreaNames.Admin)]
         public IActionResult Configure(SalesForecastingPluginSettings settings)
         {
@@ -90,7 +89,6 @@ namespace Majako.Plugin.Misc.SalesForecasting.Controllers
 
         [HttpPost]
         [AuthorizeAdmin]
-        [AdminAntiForgery]
         [Area(AreaNames.Admin)]
         public async Task<IActionResult> Forecast(ForecastSearchModel searchModel)
         {
@@ -103,7 +101,6 @@ namespace Majako.Plugin.Misc.SalesForecasting.Controllers
 
         [HttpPost]
         [AuthorizeAdmin]
-        [AdminAntiForgery]
         [Area(AreaNames.Admin)]
         public async Task<IActionResult> NewForecast()
         {
@@ -119,7 +116,6 @@ namespace Majako.Plugin.Misc.SalesForecasting.Controllers
 
         [HttpGet]
         [AuthorizeAdmin]
-        [AdminAntiForgery]
         [Area(AreaNames.Admin)]
         public async Task<IActionResult> GetForecast()
         {
@@ -148,7 +144,6 @@ namespace Majako.Plugin.Misc.SalesForecasting.Controllers
 
         [HttpPost]
         [AuthorizeAdmin]
-        [AdminAntiForgery]
         [Area(AreaNames.Admin)]
         public IActionResult GetResultsPage(ForecastResultModel model)
         {
@@ -168,7 +163,6 @@ namespace Majako.Plugin.Misc.SalesForecasting.Controllers
 
         [HttpPost]
         [AuthorizeAdmin]
-        [AdminAntiForgery]
         [Area(AreaNames.Admin)]
         public async Task<IActionResult> ExportCsv()
         {

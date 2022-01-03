@@ -55,13 +55,12 @@ namespace Majako.Plugin.Misc.SalesForecasting
                 return;
             salesNode.ChildNodes.Insert(salesNode.ChildNodes.Count, new SiteMapNode
             {
-                // Title = _localizationService.GetResource("Majako.Plugin.Misc.SalesForecasting"),
-                Title = "Försäljningsprognoser",
+                Title = _localizationService.GetResource("Majako.Plugin.Misc.SalesForecasting.SalesForecasting"),
                 Url = $"/{BASE_ROUTE}/{FORECAST}",
                 Visible = true,
                 RouteValues = new RouteValueDictionary { { "Area", "Admin" } },
                 IconClass = "fa-dot-circle-o",
-                SystemName = "Order.SalesForecasting"
+                SystemName = "Misc.SalesForecasting"
             });
         }
 
@@ -71,10 +70,8 @@ namespace Majako.Plugin.Misc.SalesForecasting
             _settingService.SaveSetting(settings);
             foreach (var (file, language) in GetLocalizations())
             {
-                using (var streamReader = file.OpenText())
-                {
-                    _localizationService.ImportResourcesFromXml(language, streamReader);
-                }
+                using var streamReader = file.OpenText();
+                _localizationService.ImportResourcesFromXml(language, streamReader);
             }
             base.Install();
         }
@@ -82,11 +79,7 @@ namespace Majako.Plugin.Misc.SalesForecasting
         public override void Uninstall()
         {
             _settingService.DeleteSetting<SalesForecastingPluginSettings>();
-            var resources = GetLocalizations()
-                .SelectMany(x => _localizationService.GetAllResources(x.language.Id))
-                .Where(x => x.ResourceName.StartsWith("Majako.Plugin.Misc.SalesForecasting", System.StringComparison.InvariantCultureIgnoreCase));
-            foreach (var resource in resources)
-                _localizationService.DeleteLocaleStringResource(resource);
+            _localizationService.DeletePluginLocaleResources("Majako.Plugin.Misc.SalesForecasting");
             base.Uninstall();
         }
 
@@ -103,7 +96,7 @@ namespace Majako.Plugin.Misc.SalesForecasting
                 .GetAllLanguages()
                 .ToLookup(x => x.LanguageCulture.ToLower());
 
-            string getLanguageCode(string culture) => culture.Split('-', 1)[0];
+            static string getLanguageCode(string culture) => culture.Split('-', 1)[0];
 
             var filesByLanguageCode = files
               .GroupBy(x => getLanguageCode(x.Key))
