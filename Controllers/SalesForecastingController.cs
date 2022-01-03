@@ -1,5 +1,4 @@
-﻿using System.Collections.Generic;
-using System.Linq;
+﻿using System.Linq;
 using System.Threading.Tasks;
 using Majako.Plugin.Misc.SalesForecasting.Services;
 using Majako.Plugin.Misc.SalesForecasting.Models;
@@ -62,12 +61,15 @@ namespace Majako.Plugin.Misc.SalesForecasting.Controllers
 
         [AuthorizeAdmin]
         [Area(AreaNames.Admin)]
-        public IActionResult Forecast()
+        public async Task<IActionResult> Forecast()
         {
             if (!_permissionService.Authorize(StandardPermissionProvider.ManageOrders))
                 return AccessDeniedView();
 
-            return View("~/Plugins/Misc.SalesForecasting/Views/ForecastSearch.cshtml", new ForecastSearchModel());
+            var settings = _settingService.LoadSetting<SalesForecastingPluginSettings>();
+            return string.IsNullOrEmpty(settings.ForecastId)
+              ? View("~/Plugins/Misc.SalesForecasting/Views/ForecastSearch.cshtml", new ForecastSearchModel())
+              : await GetForecast();
         }
 
         [HttpPost]
@@ -95,14 +97,51 @@ namespace Majako.Plugin.Misc.SalesForecasting.Controllers
             if (!_permissionService.Authorize(StandardPermissionProvider.ManageOrders))
                 return AccessDeniedView();
 
-            var forecast = await _salesForecastingService.ForecastAsync(searchModel).ConfigureAwait(false);
-            var resultModel = new ForecastResultModel
+            await _salesForecastingService.SubmitForecastAsync(searchModel).ConfigureAwait(false);
+            return View("~/Plugins/Misc.SalesForecasting/Views/ForecastSubmitted.cshtml");
+        }
+
+        [HttpPost]
+        [AuthorizeAdmin]
+        [Area(AreaNames.Admin)]
+        public async Task<IActionResult> NewForecast()
+        {
+            if (!_permissionService.Authorize(StandardPermissionProvider.ManageOrders))
+                return AccessDeniedView();
+
+            var settings = _settingService.LoadSetting<SalesForecastingPluginSettings>();
+            settings.ForecastId = null;
+            _settingService.SaveSetting(settings);
+
+            return await Forecast();
+        }
+
+        [HttpGet]
+        [AuthorizeAdmin]
+        [Area(AreaNames.Admin)]
+        public async Task<IActionResult> GetForecast()
+        {
+            if (!_permissionService.Authorize(StandardPermissionProvider.ManageOrders))
+                return AccessDeniedView();
+
+            var settings = _settingService.LoadSetting<SalesForecastingPluginSettings>();
+            try
             {
-                ResultsJson = JsonConvert.SerializeObject(forecast, _jsonSerializerSettings),
-                SearchModel = searchModel
-            };
-            resultModel.SetGridPageSize();
-            return View("~/Plugins/Misc.SalesForecasting/Views/ForecastResults.cshtml", resultModel);
+                var forecast = await _salesForecastingService.GetForecastAsync().ConfigureAwait(false);
+                var resultModel = new ForecastResultModel
+                {
+                    ResultsJson = JsonConvert.SerializeObject(forecast, _jsonSerializerSettings)
+                };
+                resultModel.SetGridPageSize();
+                return View("~/Plugins/Misc.SalesForecasting/Views/ForecastResults.cshtml", resultModel);
+            }
+            catch (System.Exception)
+            {
+                settings.ForecastId = null;
+                _settingService.SaveSetting(settings);
+                _notificationService.ErrorNotification(_localizationService.GetResource("Majako.Plugin.Misc.SalesForecasting.ForecastNotFound"));
+                return await Forecast();
+            }
         }
 
         [HttpPost]
@@ -129,11 +168,13 @@ namespace Majako.Plugin.Misc.SalesForecasting.Controllers
         [AuthorizeAdmin]
         [AutoValidateAntiforgeryToken]
         [Area(AreaNames.Admin)]
-        public IActionResult ExportCsv(string resultsJson)
+        public async Task<IActionResult> ExportCsv()
         {
             if (!_permissionService.Authorize(StandardPermissionProvider.ManageOrders))
                 return AccessDeniedView();
-            var results = JsonConvert.DeserializeObject<IEnumerable<ForecastResponse>>(resultsJson);
+
+            var settings = _settingService.LoadSetting<SalesForecastingPluginSettings>();
+            var forecast = await _salesForecastingService.GetForecastAsync().ConfigureAwait(false);
             var stream = new MemoryStream();
             var header = string.Join(';', new[]
             {
@@ -145,7 +186,7 @@ namespace Majako.Plugin.Misc.SalesForecasting.Controllers
             using (var streamWriter = new StreamWriter(stream))
             {
                 streamWriter.WriteLine(header);
-                foreach (var line in results)
+                foreach (var line in forecast)
                     streamWriter.WriteLine($"{line.Name};{line.ProductId};{line.Sku};{line.Prediction}");
             }
             return File(stream.ToArray(), "application/csv", $"sales_forecast_{DateTime.UtcNow.ToShortDateString()}.csv");
