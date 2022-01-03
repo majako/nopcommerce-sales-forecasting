@@ -18,6 +18,9 @@
     <LocaleResource Name="Majako.Plugin.Misc.SalesForecasting.Submit">
         <Value>Submit</Value>
     </LocaleResource>
+    <LocaleResource Name="Majako.Plugin.Misc.SalesForecasting.NewForecast">
+        <Value>New forecast</Value>
+    </LocaleResource>
     <LocaleResource Name="Majako.Plugin.Misc.SalesForecasting.Sku">
         <Value>SKU</Value>
     </LocaleResource>
@@ -35,6 +38,9 @@
     </LocaleResource>
     <LocaleResource Name="Majako.Plugin.Misc.SalesForecasting.ForecastReady">
         <Value>Your sales forecast is ready!</Value>
+    </LocaleResource>
+    <LocaleResource Name="Majako.Plugin.Misc.SalesForecasting.ForecastReady">
+        <Value>View forecast</Value>
     </LocaleResource>
     <LocaleResource Name="Majako.Plugin.Misc.SalesForecasting.ForecastFailed">
         <Value>Sales forecasting failed. Please try again or contact support@majako.se.</Value>

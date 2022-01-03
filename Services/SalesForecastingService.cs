@@ -18,6 +18,7 @@ using System.Threading.Tasks;
 using System.Threading;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Serialization;
+using Nop.Core;
 
 namespace Majako.Plugin.Misc.SalesForecasting.Services
 {
@@ -28,6 +29,7 @@ namespace Majako.Plugin.Misc.SalesForecasting.Services
             public string ProductId { get; set; }
             public DateTime Created { get; set; }
             public int Quantity { get; set; }
+            public decimal Discount { get; set; }
         }
 
         private class ForecastRequest
@@ -66,6 +68,7 @@ namespace Majako.Plugin.Misc.SalesForecasting.Services
         private readonly ICategoryService _categoryService;
         private readonly INotificationService _notificationService;
         private readonly ILocalizationService _localizationService;
+        private readonly IWebHelper _webHelper;
         private readonly IRepository<Order> _orderRepository;
         private readonly IRepository<OrderItem> _orderItemRepository;
         private readonly JsonSerializerSettings _jsonSerializerSettings = new JsonSerializerSettings
@@ -84,8 +87,10 @@ namespace Majako.Plugin.Misc.SalesForecasting.Services
             INotificationService notificationService,
             ICategoryService categoryService,
             ILocalizationService localizationService,
-            IHttpClientFactory httpClientFactory
-        ){
+            IHttpClientFactory httpClientFactory,
+            IWebHelper webHelper
+        )
+        {
             _httpClient = httpClientFactory.CreateClient(NopHttpDefaults.DefaultHttpClient);
             _orderRepository = orderRepository;
             _settingService = settingService;
@@ -93,6 +98,7 @@ namespace Majako.Plugin.Misc.SalesForecasting.Services
             _productService = productService;
             _categoryService = categoryService;
             _localizationService = localizationService;
+            _webHelper = webHelper;
             _orderItemRepository = orderItemRepository;
         }
 
@@ -136,7 +142,7 @@ namespace Majako.Plugin.Misc.SalesForecasting.Services
             var searchModel = JsonConvert.DeserializeObject<ForecastSearchModel>(settings.SearchModelJson);
             return GetProductsFromSearch(searchModel).Select(p => new ForecastResponse(
               p,
-              predictions.TryGetValue(p.Id.ToString(), out int prediction) ? prediction : 0));
+              predictions.TryGetValue(p.Id.ToString(), out var prediction) ? prediction : 0));
         }
 
         private async Task PollForecastAsync(CancellationToken token)
@@ -159,10 +165,15 @@ namespace Majako.Plugin.Misc.SalesForecasting.Services
                 {
                     var content = JsonConvert.DeserializeObject<RawForecastResponse>(await getForecastResponse.Content.ReadAsStringAsync().ConfigureAwait(false));
                     var predictions = content.Data.Predictions.ToDictionary(p => p.ProductId, p => p.Quantity);
-                    _notificationService.SuccessNotification(_localizationService.GetResource("Majako.Plugin.Misc.SalesForecasting.ForecastReady"));
+                    var url = $"{_webHelper.GetStoreLocation()}{SalesForecastingPlugin.BASE_ROUTE}/{SalesForecastingPlugin.FORECAST}";
+                    _notificationService.SuccessNotification(
+                      _localizationService.GetResource("Majako.Plugin.Misc.SalesForecasting.ForecastReady") +
+                        $" <a href=\"{url}\">{_localizationService.GetResource("Majako.Plugin.Misc.SalesForecasting.ForecastLinkText")}</a>",
+                      encode: false
+                    );
                     break;
                 }
-                await Task.Delay(10000);
+                await Task.Delay(5000);
             }
         }
 
@@ -179,13 +190,16 @@ namespace Majako.Plugin.Misc.SalesForecasting.Services
                 {
                     productId = productId,
                     order = order,  // date cannot be saved directly for some reason
-                    quantity = orderItem.Quantity
+                    quantity = orderItem.Quantity,
+                    discount = orderItem.DiscountAmountExclTax,
+                    price = orderItem.PriceExclTax
                 };
             return query.ToArray().Select(r => new Sale
             {
                 ProductId = r.productId.ToString(),
                 Created = r.order.CreatedOnUtc,
-                Quantity = r.quantity
+                Quantity = r.quantity,
+                Discount = r.price > 0 ? r.discount / r.price : 0
             });
         }
 

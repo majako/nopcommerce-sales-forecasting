@@ -102,6 +102,22 @@ namespace Majako.Plugin.Misc.SalesForecasting.Controllers
             return View("~/Plugins/Misc.SalesForecasting/Views/ForecastSubmitted.cshtml");
         }
 
+        [HttpPost]
+        [AuthorizeAdmin]
+        [AdminAntiForgery]
+        [Area(AreaNames.Admin)]
+        public async Task<IActionResult> NewForecast()
+        {
+            if (!_permissionService.Authorize(StandardPermissionProvider.ManageOrders))
+                return AccessDeniedView();
+
+            var settings = _settingService.LoadSetting<SalesForecastingPluginSettings>();
+            settings.ForecastId = null;
+            _settingService.SaveSetting(settings);
+
+            return await Forecast();
+        }
+
         [HttpGet]
         [AuthorizeAdmin]
         [AdminAntiForgery]

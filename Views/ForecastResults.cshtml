@@ -64,6 +64,19 @@
                     <div class="col-md-6">
                         <div class="form-group">
                             <div class="col-md-8 col-md-offset-4">
+                                @using(@Html.BeginForm("NewForecast", "SalesForecasting", FormMethod.Post))
+                                {
+                                    <button type="submit" class="btn btn-primary" id="new-forecast">
+                                        <i class="fa fa-plus-square"></i>
+                                        @T("Majako.Plugin.Misc.SalesForecasting.NewForecast")
+                                    </button>
+                                }
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <div class="col-md-8 col-md-offset-4">
                                 @using(@Html.BeginForm("ExportCsv", "SalesForecasting", FormMethod.Post))
                                 {
                                     <button type="submit" class="btn bg-olive" id="export-csv">

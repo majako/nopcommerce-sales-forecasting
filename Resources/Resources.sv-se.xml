@@ -18,6 +18,9 @@
     <LocaleResource Name="Majako.Plugin.Misc.SalesForecasting.Submit">
         <Value>Skicka</Value>
     </LocaleResource>
+    <LocaleResource Name="Majako.Plugin.Misc.SalesForecasting.NewForecast">
+        <Value>Ny prognos</Value>
+    </LocaleResource>
     <LocaleResource Name="Majako.Plugin.Misc.SalesForecasting.Sku">
         <Value>Artikelnummer</Value>
     </LocaleResource>
@@ -35,6 +38,9 @@
     </LocaleResource>
     <LocaleResource Name="Majako.Plugin.Misc.SalesForecasting.ForecastReady">
         <Value>Din försäljningsprognos är klar!</Value>
+    </LocaleResource>
+    <LocaleResource Name="Majako.Plugin.Misc.SalesForecasting.ForecastLinkText">
+        <Value>Se prognos</Value>
     </LocaleResource>
     <LocaleResource Name="Majako.Plugin.Misc.SalesForecasting.ForecastFailed">
         <Value>Försäljningsprognos misslyckades. Var vänlig försök igen eller kontakta support@majako.se.</Value>
