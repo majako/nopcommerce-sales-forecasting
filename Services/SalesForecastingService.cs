@@ -19,6 +19,8 @@ using System.Threading;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Serialization;
 using Nop.Core;
+using Nop.Services.Discounts;
+using Nop.Core.Domain.Discounts;
 
 namespace Majako.Plugin.Misc.SalesForecasting.Services
 {
@@ -38,6 +40,7 @@ namespace Majako.Plugin.Misc.SalesForecasting.Services
             public int? Period { get; set; }
             public float? MinWeight { get; set; }
             public IEnumerable<Sale> Data { get; set; }
+            public Dictionary<string, float> Discounts { get; set; }
         }
 
         private class RawForecastResponse
@@ -68,6 +71,7 @@ namespace Majako.Plugin.Misc.SalesForecasting.Services
         private readonly ICategoryService _categoryService;
         private readonly INotificationService _notificationService;
         private readonly ILocalizationService _localizationService;
+        private readonly IDiscountService _discountService;
         private readonly IWebHelper _webHelper;
         private readonly IRepository<Order> _orderRepository;
         private readonly IRepository<OrderItem> _orderItemRepository;
@@ -87,6 +91,7 @@ namespace Majako.Plugin.Misc.SalesForecasting.Services
             INotificationService notificationService,
             ICategoryService categoryService,
             ILocalizationService localizationService,
+            IDiscountService discountService,
             IHttpClientFactory httpClientFactory,
             IWebHelper webHelper
         )
@@ -98,6 +103,7 @@ namespace Majako.Plugin.Misc.SalesForecasting.Services
             _productService = productService;
             _categoryService = categoryService;
             _localizationService = localizationService;
+            _discountService = discountService;
             _webHelper = webHelper;
             _orderItemRepository = orderItemRepository;
         }
@@ -107,6 +113,8 @@ namespace Majako.Plugin.Misc.SalesForecasting.Services
             var settings = _settingService.LoadSetting<SalesForecastingPluginSettings>();
             var products = GetProductsFromSearch(searchModel);
             var data = GetData(products.Select(p => p.Id).ToArray());
+            var startDate = until ?? DateTime.Today;
+            var discounts = GetDiscounts(products, startDate, startDate + TimeSpan.FromDays(searchModel.PeriodLength));
             if (until != null)
                 data = data.Where(s => s.Created <= until);
             if (!data.Any())
@@ -201,6 +209,34 @@ namespace Majako.Plugin.Misc.SalesForecasting.Services
                 Quantity = r.quantity,
                 Discount = r.price > 0 ? r.discount / r.price : 0
             });
+        }
+
+        private IDictionary<string, float> GetDiscounts(IEnumerable<Product> products, DateTime from, DateTime until)
+        {
+            var discounts = _discountService
+              .GetAllDiscounts(
+                showHidden: true,
+                startDateUtc: from.ToUniversalTime(),
+                endDateUtc: until.ToUniversalTime()
+              );
+
+            var discountsByProduct = new Dictionary<string, Discount>();
+
+            var pids = products.Select(p => p.Id).ToHashSet();
+            foreach (var dpm in discounts.SelectMany(d => d.DiscountProductMappings.Where(x => pids.Contains(x.ProductId))))
+              discountsByProduct.Add(dpm.ProductId.ToString(), dpm.Discount);
+
+            var mids = products.SelectMany(p => p.ProductManufacturers.Select(m => m.ManufacturerId)).ToHashSet();
+            var manufacturerDiscounts = discounts.Where(d => mids.Overlaps(d.DiscountManufacturerMappings.Select(x => x.ManufacturerId)));
+
+            var cids = _categoryService
+              .GetProductCategoryIds(pids.ToArray())
+              .Values
+              .SelectMany(xs => xs)
+              .ToHashSet();
+            var categoryDiscounts = discounts.Where(d => cids.Overlaps(d.DiscountCategoryMappings.Select(x => x.CategoryId)));
+
+            return discountsByProduct;
         }
 
         private IList<Product> GetProductsFromSearch(ProductSearchModel productSearchModel)
