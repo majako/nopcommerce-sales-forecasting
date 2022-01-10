@@ -220,23 +220,56 @@ namespace Majako.Plugin.Misc.SalesForecasting.Services
                 endDateUtc: until.ToUniversalTime()
               );
 
-            var discountsByProduct = new Dictionary<string, Discount>();
+            var discountsByProduct = new Dictionary<int, IList<Discount>>();
+            void add(int key, Discount value)
+            {
+                discountsByProduct.GetValueOrDefault(
+                  key,
+                  discountsByProduct[key] = new List<Discount>()
+                ).Add(value);
+            }
 
-            var pids = products.Select(p => p.Id).ToHashSet();
-            foreach (var dpm in discounts.SelectMany(d => d.DiscountProductMappings.Where(x => pids.Contains(x.ProductId))))
-              discountsByProduct.Add(dpm.ProductId.ToString(), dpm.Discount);
+            var productsById = products.ToDictionary(p => p.Id);
+            foreach (var dpm in discounts.SelectMany(d => d.DiscountProductMappings.Where(x => productsById.ContainsKey(x.ProductId))))
+                add(dpm.ProductId, dpm.Discount);
 
-            var mids = products.SelectMany(p => p.ProductManufacturers.Select(m => m.ManufacturerId)).ToHashSet();
-            var manufacturerDiscounts = discounts.Where(d => mids.Overlaps(d.DiscountManufacturerMappings.Select(x => x.ManufacturerId)));
+            var productsByManufacturer = products
+              .SelectMany(p => p.ProductManufacturers.Select(m => (mid: m.ManufacturerId, pid: p.Id)))
+              .ToLookup(x => x.mid, x => x.pid);
+            foreach (var dmm in discounts.SelectMany(d => d.DiscountManufacturerMappings))
+            {
+                foreach (var grouping in productsByManufacturer[dmm.ManufacturerId])
+                    add(grouping, dmm.Discount);
+            }
 
-            var cids = _categoryService
-              .GetProductCategoryIds(pids.ToArray())
-              .Values
-              .SelectMany(xs => xs)
-              .ToHashSet();
-            var categoryDiscounts = discounts.Where(d => cids.Overlaps(d.DiscountCategoryMappings.Select(x => x.CategoryId)));
+            var productsByCategory = _categoryService
+              .GetProductCategoryIds(productsById.Keys.ToArray())
+              .SelectMany(kv => kv.Value.Select(cid => (cid, pid: kv.Key)))
+              .ToLookup(x => x.cid, x => x.pid);
+            foreach (var dcm in discounts.SelectMany(d => d.DiscountCategoryMappings))
+            {
+                foreach (var grouping in productsByCategory[dcm.CategoryId])
+                    add(grouping, dcm.Discount);
+            }
 
-            return discountsByProduct;
+            return discountsByProduct
+              .Select(kv =>
+              {
+                  var price = productsById[kv.Key].Price;
+                  if (price == 0)
+                      return (pid: kv.Key, discount: 0f);
+                  _discountService.GetPreferredDiscount(
+                    kv.Value.Select(_discountService.MapDiscount).ToList(),
+                    price,
+                    out var discountAmount
+                  );
+                  return (pid: kv.Key, discount: (float)(discountAmount / price));
+              })
+              .Where(t => t.discount != 0)
+              .ToDictionary(
+                t => t.pid.ToString(),
+                t => t.discount
+              );
         }
 
         private IList<Product> GetProductsFromSearch(ProductSearchModel productSearchModel)
