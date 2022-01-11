@@ -108,15 +108,13 @@ namespace Majako.Plugin.Misc.SalesForecasting.Services
             _orderItemRepository = orderItemRepository;
         }
 
-        public async Task SubmitForecastAsync(ForecastSearchModel searchModel, DateTime? until = null)
+        public async Task SubmitForecastAsync(ForecastSearchModel searchModel)
         {
             var settings = _settingService.LoadSetting<SalesForecastingPluginSettings>();
             var products = GetProductsFromSearch(searchModel);
-            var data = GetData(products.Select(p => p.Id).ToArray());
-            var startDate = until ?? DateTime.Today;
+            var startDate = DateTime.Today;
             var discounts = GetDiscounts(products, startDate, startDate + TimeSpan.FromDays(searchModel.PeriodLength));
-            if (until != null)
-                data = data.Where(s => s.Created <= until);
+            var data = GetData(products.Select(p => p.Id).ToArray());
             if (!data.Any())
                 return;
             var request = new ForecastRequest
@@ -134,6 +132,13 @@ namespace Majako.Plugin.Misc.SalesForecasting.Services
             _pollingCancellationTokenSource.Cancel();
             _pollingCancellationTokenSource = new CancellationTokenSource();
             _ = PollForecastAsync(_pollingCancellationTokenSource.Token);
+        }
+
+        public void GetPreliminaryData(ForecastSearchModel searchModel)
+        {
+            var products = GetProductsFromSearch(searchModel);
+            var startDate = DateTime.Today;
+            var discounts = GetDiscounts(products, startDate, startDate + TimeSpan.FromDays(searchModel.PeriodLength));
         }
 
         public async Task<IEnumerable<ForecastResponse>> GetForecastAsync()
@@ -211,7 +216,7 @@ namespace Majako.Plugin.Misc.SalesForecasting.Services
             });
         }
 
-        private IDictionary<string, float> GetDiscounts(IEnumerable<Product> products, DateTime from, DateTime until)
+        private IDictionary<int, IList<Discount>> GetDiscounts(IEnumerable<Product> products, DateTime from, DateTime until)
         {
             var discounts = _discountService
               .GetAllDiscounts(
@@ -252,23 +257,29 @@ namespace Majako.Plugin.Misc.SalesForecasting.Services
                     add(grouping, dcm.Discount);
             }
 
+            return discountsByProduct;
+        }
+
+        private IDictionary<string, float> GetAppliedDiscounts(IDictionary<int, IList<Discount>> discountsByProduct, int[] productIds)
+        {
+            var productsById = _productService.GetProductsByIds(productIds).ToDictionary(p => p.Id);
             return discountsByProduct
               .Select(kv =>
               {
                   var price = productsById[kv.Key].Price;
                   if (price == 0)
-                      return (pid: kv.Key, discount: 0f);
+                      return (pid: kv.Key, discount: 0m);
                   _discountService.GetPreferredDiscount(
                     kv.Value.Select(_discountService.MapDiscount).ToList(),
                     price,
                     out var discountAmount
                   );
-                  return (pid: kv.Key, discount: (float)(discountAmount / price));
+                  return (pid: kv.Key, discount: discountAmount / price);
               })
               .Where(t => t.discount != 0)
               .ToDictionary(
                 t => t.pid.ToString(),
-                t => t.discount
+                t => (float)t.discount
               );
         }
 
