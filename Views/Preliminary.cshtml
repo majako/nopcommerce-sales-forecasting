@@ -1,0 +1,38 @@
+﻿@using Nop.Web.Framework.UI
+@using Majako.Plugin.Misc.SalesForecasting.Models
+@model PreliminaryForecastModel
+
+@{
+    ViewBag.Title = T("Majako.Plugin.Misc.SalesForecasting.SalesForecasting").Text;
+    Html.SetActiveMenuItemSystemName("Sales.SalesForecasting");
+    Layout = "~/Areas/Admin/Views/Shared/_AdminLayout.cshtml";
+}
+
+<div class="content-header clearfix">
+    <h1 class="pull-left">
+        @T("Majako.Plugin.Misc.SalesForecasting.SalesForecasting")
+    </h1>
+</div>
+
+<div class="content">
+  <h5>
+    Select discounts to include
+  </h5>
+  <form asp-controller="SalesForecasting" asp-action="Forecast" method="post">
+    <div class="row">
+        <div class="col-md-5">
+          @foreach (var discount in Model.Discounts.Values.SelectMany(xs => xs).Distinct())
+          {
+            <div class="form-group">
+                <div class="col-md-8" style="text-align: right">
+                    <label class="custom-control-label"><strong>@discount.Name</strong></label>
+                </div>
+                <div class="col-md-4">
+                    @* <nop-editor asp-for="SearchProductName" /> *@
+                </div>
+            </div>
+          }
+        </div>
+    </div>
+  </form>
+</div>

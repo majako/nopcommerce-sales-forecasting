@@ -36,11 +36,11 @@ namespace Majako.Plugin.Misc.SalesForecasting.Services
 
         private class ForecastRequest
         {
-            public Dictionary<string, float> Params { get; set; }
+            public IDictionary<string, float> Params { get; set; }
             public int? Period { get; set; }
             public float? MinWeight { get; set; }
             public IEnumerable<Sale> Data { get; set; }
-            public Dictionary<string, float> Discounts { get; set; }
+            public IDictionary<string, float> Discounts { get; set; }
         }
 
         private class RawForecastResponse
@@ -108,37 +108,40 @@ namespace Majako.Plugin.Misc.SalesForecasting.Services
             _orderItemRepository = orderItemRepository;
         }
 
-        public async Task SubmitForecastAsync(ForecastSearchModel searchModel)
+        public async Task SubmitForecastAsync(PreliminaryForecastModel model)
         {
             var settings = _settingService.LoadSetting<SalesForecastingPluginSettings>();
-            var products = GetProductsFromSearch(searchModel);
-            var startDate = DateTime.Today;
-            var discounts = GetDiscounts(products, startDate, startDate + TimeSpan.FromDays(searchModel.PeriodLength));
-            var data = GetData(products.Select(p => p.Id).ToArray());
+            var data = GetData(model.ProductIds);
             if (!data.Any())
                 return;
             var request = new ForecastRequest
             {
                 Data = data,
-                Period = searchModel.PeriodLength
+                Period = model.PeriodLength,
+                Discounts = GetAppliedDiscounts(model.Discounts, model.ProductIds)
             };
             var requestContent = new StringContent(JsonConvert.SerializeObject(request, _jsonSerializerSettings));
             requestContent.Headers.ContentType = MediaTypeHeaderValue.Parse("application/json");
             var response = await _httpClient.PostAsync($"{BASE_URL}forecast", requestContent).ConfigureAwait(false);
             var forecastId = JsonConvert.DeserializeObject<ForecastSubmittedResponse>(await response.Content.ReadAsStringAsync().ConfigureAwait(false)).Id;
             settings.ForecastId = forecastId;
-            settings.SearchModelJson = JsonConvert.SerializeObject(searchModel, _jsonSerializerSettings);
+            settings.SearchModelJson = JsonConvert.SerializeObject(model, _jsonSerializerSettings);
             _settingService.SaveSetting(settings);
             _pollingCancellationTokenSource.Cancel();
             _pollingCancellationTokenSource = new CancellationTokenSource();
             _ = PollForecastAsync(_pollingCancellationTokenSource.Token);
         }
 
-        public void GetPreliminaryData(ForecastSearchModel searchModel)
+        public PreliminaryForecastModel GetPreliminaryData(ForecastSearchModel searchModel)
         {
             var products = GetProductsFromSearch(searchModel);
             var startDate = DateTime.Today;
             var discounts = GetDiscounts(products, startDate, startDate + TimeSpan.FromDays(searchModel.PeriodLength));
+            return new PreliminaryForecastModel
+            {
+                ProductIds = products.Select(p => p.Id).ToArray(),
+                Discounts = discounts
+            };
         }
 
         public async Task<IEnumerable<ForecastResponse>> GetForecastAsync()

@@ -7,8 +7,9 @@ namespace Majako.Plugin.Misc.SalesForecasting.Models
 {
     public class PreliminaryForecastModel : BaseNopEntityModel
     {
-        public IEnumerable<int> ProductIds { get; set; }
-        public IEnumerable<Discount> Discounts { get; set; }
+        public int[] ProductIds { get; set; }
+        public IDictionary<int, IList<Discount>> Discounts { get; set; }
+        public int PeriodLength { get; set; }
 
         public PreliminaryForecastModel() {}
     }
