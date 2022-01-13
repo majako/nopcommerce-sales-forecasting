@@ -90,9 +90,8 @@ namespace Majako.Plugin.Misc.SalesForecasting.Controllers
 
         [HttpPost]
         [AuthorizeAdmin]
-        [AdminAntiForgery]
         [Area(AreaNames.Admin)]
-        public async Task<IActionResult> Forecast(PreliminaryForecastModel model)
+        public async Task<IActionResult> Forecast([FromBody] ForecastSubmissionModel model)
         {
             if (!_permissionService.Authorize(StandardPermissionProvider.ManageOrders))
                 return AccessDeniedView();

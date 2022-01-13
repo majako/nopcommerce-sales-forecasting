@@ -1,38 +1,71 @@
 ﻿@using Nop.Web.Framework.UI
+@using System.Linq
 @using Majako.Plugin.Misc.SalesForecasting.Models
 @model PreliminaryForecastModel
 
 @{
-    ViewBag.Title = T("Majako.Plugin.Misc.SalesForecasting.SalesForecasting").Text;
-    Html.SetActiveMenuItemSystemName("Sales.SalesForecasting");
-    Layout = "~/Areas/Admin/Views/Shared/_AdminLayout.cshtml";
+  ViewBag.Title = T("Majako.Plugin.Misc.SalesForecasting.SalesForecasting").Text;
+  Html.SetActiveMenuItemSystemName("Sales.SalesForecasting");
+  Layout = "~/Areas/Admin/Views/Shared/_AdminLayout.cshtml";
 }
 
 <div class="content-header clearfix">
-    <h1 class="pull-left">
-        @T("Majako.Plugin.Misc.SalesForecasting.SalesForecasting")
-    </h1>
+  <h1 class="pull-left">
+    @T("Majako.Plugin.Misc.SalesForecasting.SalesForecasting")
+  </h1>
 </div>
 
 <div class="content">
   <h5>
     Select discounts to include
   </h5>
-  <form asp-controller="SalesForecasting" asp-action="Forecast" method="post">
+  <form>
     <div class="row">
-        <div class="col-md-5">
-          @foreach (var discount in Model.Discounts.Values.SelectMany(xs => xs).Distinct())
-          {
-            <div class="form-group">
-                <div class="col-md-8" style="text-align: right">
-                    <label class="custom-control-label"><strong>@discount.Name</strong></label>
-                </div>
-                <div class="col-md-4">
-                    @* <nop-editor asp-for="SearchProductName" /> *@
-                </div>
-            </div>
-          }
+      <div class="col-md-5">
+        @foreach (var discount in Model.DiscountsByProduct.Values.SelectMany(ds => ds).Distinct())
+        {
+          <div class="form-group">
+            <input id="@discount.Id" type="checkbox" checked />
+            <label class="custom-control-label" for="@discount.Id"><strong>@discount.Name</strong></label>
+          </div>
+        }
+      </div>
+    </div>
+    <div class="row">
+      <div class="form-group">
+        <div class="col-md-8 col-md-offset-4">
+          <button type="button" class="btn btn-primary" onclick="majako_salesforecasting_submit()">
+            @T("Majako.Plugin.Misc.SalesForecasting.Submit")
+          </button>
         </div>
+      </div>
     </div>
   </form>
 </div>
+
+<script>
+  function majako_salesforecasting_submit() {
+    let selectedDiscounts = new Set(
+      [@Html.Raw(string.Join(',', Model.DiscountsByProduct.Values.SelectMany(ds => ds.Select(d => d.Id)).Distinct()))]
+    );
+    selectedDiscounts = new Set(Array.from(selectedDiscounts).filter(d => document.getElementById(d).checked));
+    const discountsByProduct = new Map([
+        @Html.Raw(string.Join(',', Model.DiscountsByProduct.Select(kv =>
+          $"[{kv.Key},[{string.Join(',', kv.Value.Select(d => d.Id))}]]")))
+      ].map(kv => [kv[0], kv[1].filter(v => selectedDiscounts.has(v))])
+    );
+
+    const data = {
+      discountsByProduct: Array.from(discountsByProduct),
+      periodLength: @Model.PeriodLength
+    };
+
+    $.ajax({
+      cache: false,
+      contentType: 'application/json',
+      type: 'POST',
+      data: JSON.stringify(data),
+      url: '@(Url.Action("Forecast", "SalesForecasting"))'
+    });
+  }
+</script>

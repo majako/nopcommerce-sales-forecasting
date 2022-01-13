@@ -5,9 +5,9 @@ using Nop.Core.Domain.Discounts;
 
 namespace Majako.Plugin.Misc.SalesForecasting.Models
 {
-    public class PreliminaryForecastModel
+    public class ForecastSubmissionModel
     {
-        public IDictionary<int, Discount[]> DiscountsByProduct { get; set; }
+        public IEnumerable<KeyValuePair<int, int[]>> DiscountsByProduct { get; set; }
         public int PeriodLength { get; set; }
     }
 }
