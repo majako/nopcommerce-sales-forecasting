@@ -48,6 +48,9 @@
     <LocaleResource Name="Majako.Plugin.Misc.SalesForecasting.ForecastFailed">
         <Value>Sales forecasting failed. Please try again or contact support@majako.se.</Value>
     </LocaleResource>
+    <LocaleResource Name="Majako.Plugin.Misc.SalesForecasting.InvalidSubscriptionKey">
+        <Value>Invalid API key. Please purchase a subscription at <a href="https://www.majako.net/sales-forecast-api" target="_blank">majako.net</a>, and input the key on the plugin's configuration page.</Value>
+    </LocaleResource>
     <LocaleResource Name="Majako.Plugin.Misc.SalesForecasting.SelectDiscounts">
         <Value>Select discounts to apply</Value>
     </LocaleResource>
@@ -61,10 +64,7 @@
         <Value>Forecast request submitted</Value>
     </LocaleResource>
     <LocaleResource Name="Majako.Plugin.Misc.SalesForecasting.ForecastSubmittedBody">
-        <Value>
-            Your forecast request has been submitted, and you will be notified when the forecast is ready. This typically takes a few minutes, depending on the number of products and orders.
-            If you have not received a notification after several minutes, check the main forecast page.
-        </Value>
+        <Value>Your forecast request has been submitted, and you will be notified when the forecast is ready. This typically takes a few minutes, depending on the number of products and orders. If you have not received a notification after several minutes, check the main forecast page.</Value>
     </LocaleResource>
     <LocaleResource Name="Majako.Plugin.Misc.SalesForecasting.ForecastNotFound">
         <Value>The requested forecast could not be found. Please try again.</Value>

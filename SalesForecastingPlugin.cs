@@ -55,8 +55,7 @@ namespace Majako.Plugin.Misc.SalesForecasting
                 return;
             salesNode.ChildNodes.Insert(salesNode.ChildNodes.Count, new SiteMapNode
             {
-                // Title = _localizationService.GetResource("Majako.Plugin.Misc.SalesForecasting"),
-                Title = "Försäljningsprognoser",
+                Title = _localizationService.GetResource("Majako.Plugin.Misc.SalesForecasting.SalesForecasting"),
                 Url = $"/{BASE_ROUTE}/{FORECAST}",
                 Visible = true,
                 RouteValues = new RouteValueDictionary { { "Area", "Admin" } },
@@ -98,7 +97,7 @@ namespace Majako.Plugin.Misc.SalesForecasting
                     Path.Combine(pluginsDirectory, SYSTEM_NAME, "resources"),
                     "*.xml")
                 .Select(x => new FileInfo(x))
-                .ToDictionary(x => Path.GetFileNameWithoutExtension(x.Name).ToLower());
+                .ToDictionary(x => Path.GetFileNameWithoutExtension(x.Name).Split('.').Last().ToLower());
             var languages = _languageService
                 .GetAllLanguages()
                 .ToLookup(x => x.LanguageCulture.ToLower());
