@@ -119,7 +119,9 @@ namespace Majako.Plugin.Misc.SalesForecasting.Services
             {
                 Data = data,
                 Period = model.PeriodLength,
-                Discounts = GetAppliedDiscounts(discountsByProduct)
+                Discounts = model.BlanketDiscount > 0 && model.BlanketDiscount <= 1
+                  ? discountsByProduct.ToDictionary(kv => kv.Key.ToString(), kv => model.BlanketDiscount)
+                  : GetAppliedDiscounts(discountsByProduct)
             };
             var requestContent = new StringContent(JsonConvert.SerializeObject(request, _jsonSerializerSettings));
             requestContent.Headers.ContentType = MediaTypeHeaderValue.Parse("application/json");
@@ -229,14 +231,12 @@ namespace Majako.Plugin.Misc.SalesForecasting.Services
                 endDateUtc: until.ToUniversalTime()
               );
 
-            var discountsByProduct = new Dictionary<int, IList<Discount>>();
-            void add(int key, Discount value)
-            {
-                discountsByProduct.GetValueOrDefault(
-                  key,
-                  discountsByProduct[key] = new List<Discount>()
-                ).Add(value);
-            }
+            var discountsByProduct = products.ToDictionary(
+              p => p.Id,
+              _ => (IList<Discount>)new List<Discount>()
+            );
+
+            void add(int key, Discount value) => discountsByProduct.GetValueOrDefault(key)?.Add(value);
 
             var productsById = products.ToDictionary(p => p.Id);
             foreach (var dpm in discounts.SelectMany(d => d.DiscountProductMappings.Where(x => productsById.ContainsKey(x.ProductId))))

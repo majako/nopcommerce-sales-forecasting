@@ -97,7 +97,7 @@ namespace Majako.Plugin.Misc.SalesForecasting.Controllers
                 return AccessDeniedView();
 
             await _salesForecastingService.SubmitForecastAsync(model).ConfigureAwait(false);
-            return View("~/Plugins/Misc.SalesForecasting/Views/ForecastSubmitted.cshtml");
+            return Ok();
         }
 
         [HttpPost]
