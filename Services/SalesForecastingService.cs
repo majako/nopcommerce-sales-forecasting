@@ -285,7 +285,14 @@ namespace Majako.Plugin.Misc.SalesForecasting.Services
           add(grouping, dcm.Discount);
       }
 
-      return discountsByProduct.ToDictionary(kv => kv.Key, kv => kv.Value.ToArray());
+      var orderDiscounts = discounts
+        .Where(d => d.DiscountType == DiscountType.AssignedToOrderTotal || d.DiscountType == DiscountType.AssignedToOrderSubTotal)
+        .ToArray();
+
+      return discountsByProduct.ToDictionary(
+        kv => kv.Key,
+        kv => kv.Value.Concat(orderDiscounts).ToArray()
+      );
     }
 
     private IDictionary<string, float> GetAppliedDiscounts(IDictionary<int, int[]> discountsByProduct)
