@@ -97,7 +97,7 @@ namespace Majako.Plugin.Misc.SalesForecasting
                     Path.Combine(pluginsDirectory, SYSTEM_NAME, "resources"),
                     "*.xml")
                 .Select(x => new FileInfo(x))
-                .ToDictionary(x => Path.GetFileNameWithoutExtension(x.Name).Split('.').Last().ToLower());
+                .ToDictionary(x => Path.GetFileNameWithoutExtension(x.Name).ToLower());
             var languages = _languageService
                 .GetAllLanguages()
                 .ToLookup(x => x.LanguageCulture.ToLower());
