@@ -90,15 +90,27 @@ namespace Majako.Plugin.Misc.SalesForecasting.Controllers
 
         [HttpPost]
         [AuthorizeAdmin]
-        [AdminAntiForgery]
         [Area(AreaNames.Admin)]
-        public async Task<IActionResult> Forecast(ForecastSearchModel searchModel)
+        public async Task<IActionResult> Forecast([FromBody] ForecastSubmissionModel model)
         {
             if (!_permissionService.Authorize(StandardPermissionProvider.ManageOrders))
                 return AccessDeniedView();
 
-            await _salesForecastingService.SubmitForecastAsync(searchModel).ConfigureAwait(false);
-            return View("~/Plugins/Misc.SalesForecasting/Views/ForecastSubmitted.cshtml");
+            await _salesForecastingService.SubmitForecastAsync(model).ConfigureAwait(false);
+            return Ok();
+        }
+
+        [HttpPost]
+        [AuthorizeAdmin]
+        [AdminAntiForgery]
+        [Area(AreaNames.Admin)]
+        public IActionResult GetPreliminary(ForecastSearchModel searchModel)
+        {
+            if (!_permissionService.Authorize(StandardPermissionProvider.ManageOrders))
+                return AccessDeniedView();
+
+            var model = _salesForecastingService.GetPreliminaryData(searchModel);
+            return View("~/Plugins/Misc.SalesForecasting/Views/Preliminary.cshtml", model);
         }
 
         [HttpPost]

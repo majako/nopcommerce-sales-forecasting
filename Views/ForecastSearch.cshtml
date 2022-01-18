@@ -14,7 +14,7 @@
     </h1>
 </div>
 
-<form asp-controller="SalesForecasting" asp-action="Forecast" method="post">
+<form asp-controller="SalesForecasting" asp-action="GetPreliminary" method="post">
     <div class="content">
         @await Html.PartialAsync("ForecastSearchPanel.cshtml", Model)
     </div>
