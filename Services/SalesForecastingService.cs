@@ -318,7 +318,9 @@ namespace Majako.Plugin.Misc.SalesForecasting.Services
           add(grouping, dcm.discount);
       }
 
-      var orderDiscounts = discounts.Where(d => d.DiscountType == DiscountType.AssignedToOrderTotal).ToArray();
+      var orderDiscounts = discounts
+        .Where(d => d.DiscountType == DiscountType.AssignedToOrderTotal || d.DiscountType == DiscountType.AssignedToOrderSubTotal)
+        .ToArray();
 
       return discountsByProduct.ToDictionary(
         kv => kv.Key,
