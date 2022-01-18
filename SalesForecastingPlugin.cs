@@ -60,7 +60,7 @@ namespace Majako.Plugin.Misc.SalesForecasting
                 Visible = true,
                 RouteValues = new RouteValueDictionary { { "Area", "Admin" } },
                 IconClass = "fa-dot-circle-o",
-                SystemName = "Order.SalesForecasting"
+                SystemName = "Misc.SalesForecasting"
             });
         }
 

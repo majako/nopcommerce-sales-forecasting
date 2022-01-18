@@ -3,7 +3,7 @@
   "FriendlyName": "Sales Forecasting",
   "SystemName": "Misc.SalesForecasting",
   "Version": "1.0.0",
-  "SupportedVersions": [ "4.20" ],
+  "SupportedVersions": [ "4.30" ],
   "Author": "Majako AB",
   "DisplayOrder": 1,
   "FileName": "Majako.Plugin.Misc.SalesForecasting.dll",

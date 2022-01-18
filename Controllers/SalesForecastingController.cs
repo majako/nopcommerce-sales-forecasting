@@ -74,7 +74,7 @@ namespace Majako.Plugin.Misc.SalesForecasting.Controllers
 
         [HttpPost]
         [AuthorizeAdmin]
-        [AdminAntiForgery]
+        [AutoValidateAntiforgeryToken]
         [Area(AreaNames.Admin)]
         public IActionResult Configure(SalesForecastingPluginSettings settings)
         {
@@ -160,7 +160,50 @@ namespace Majako.Plugin.Misc.SalesForecasting.Controllers
 
         [HttpPost]
         [AuthorizeAdmin]
-        [AdminAntiForgery]
+        [Area(AreaNames.Admin)]
+        public async Task<IActionResult> NewForecast()
+        {
+            if (!_permissionService.Authorize(StandardPermissionProvider.ManageOrders))
+                return AccessDeniedView();
+
+            var settings = _settingService.LoadSetting<SalesForecastingPluginSettings>();
+            settings.ForecastId = null;
+            _settingService.SaveSetting(settings);
+
+            return await Forecast();
+        }
+
+        [HttpGet]
+        [AuthorizeAdmin]
+        [Area(AreaNames.Admin)]
+        public async Task<IActionResult> GetForecast()
+        {
+            if (!_permissionService.Authorize(StandardPermissionProvider.ManageOrders))
+                return AccessDeniedView();
+
+            var settings = _settingService.LoadSetting<SalesForecastingPluginSettings>();
+            try
+            {
+                var forecast = await _salesForecastingService.GetForecastAsync().ConfigureAwait(false);
+                var resultModel = new ForecastResultModel
+                {
+                    ResultsJson = JsonConvert.SerializeObject(forecast, _jsonSerializerSettings)
+                };
+                resultModel.SetGridPageSize();
+                return View("~/Plugins/Misc.SalesForecasting/Views/ForecastResults.cshtml", resultModel);
+            }
+            catch (System.Exception)
+            {
+                settings.ForecastId = null;
+                _settingService.SaveSetting(settings);
+                _notificationService.ErrorNotification(_localizationService.GetResource("Majako.Plugin.Misc.SalesForecasting.ForecastNotFound"));
+                return await Forecast();
+            }
+        }
+
+        [HttpPost]
+        [AuthorizeAdmin]
+        [AutoValidateAntiforgeryToken]
         [Area(AreaNames.Admin)]
         public IActionResult GetResultsPage(ForecastResultModel model)
         {
@@ -180,7 +223,7 @@ namespace Majako.Plugin.Misc.SalesForecasting.Controllers
 
         [HttpPost]
         [AuthorizeAdmin]
-        [AdminAntiForgery]
+        [AutoValidateAntiforgeryToken]
         [Area(AreaNames.Admin)]
         public async Task<IActionResult> ExportCsv()
         {
