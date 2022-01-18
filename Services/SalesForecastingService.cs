@@ -72,9 +72,13 @@ namespace Majako.Plugin.Misc.SalesForecasting.Services
     private readonly INotificationService _notificationService;
     private readonly ILocalizationService _localizationService;
     private readonly IDiscountService _discountService;
+    private readonly IManufacturerService _manufacturerService;
     private readonly IWebHelper _webHelper;
     private readonly IRepository<Order> _orderRepository;
     private readonly IRepository<OrderItem> _orderItemRepository;
+    private readonly IRepository<DiscountProductMapping> _discountProductMappingRepository;
+    private readonly IRepository<DiscountCategoryMapping> _discountCategoryMappingRepository;
+    private readonly IRepository<DiscountManufacturerMapping> _discountManufacturerMappingRepository;
     private readonly JsonSerializerSettings _jsonSerializerSettings = new JsonSerializerSettings
     {
       ContractResolver = new CamelCasePropertyNamesContractResolver(),
@@ -86,12 +90,16 @@ namespace Majako.Plugin.Misc.SalesForecasting.Services
     public SalesForecastingService(
         IRepository<Order> orderRepository,
         IRepository<OrderItem> orderItemRepository,
+        IRepository<DiscountProductMapping> discountProductMappingRepository,
+        IRepository<DiscountCategoryMapping> discountCategoryMappingRepository,
+        IRepository<DiscountManufacturerMapping> discountManufacturerMappingRepository,
         ISettingService settingService,
         IProductService productService,
         INotificationService notificationService,
         ICategoryService categoryService,
         ILocalizationService localizationService,
         IDiscountService discountService,
+        IManufacturerService manufacturerService,
         IHttpClientFactory httpClientFactory,
         IWebHelper webHelper
     )
@@ -104,8 +112,12 @@ namespace Majako.Plugin.Misc.SalesForecasting.Services
       _categoryService = categoryService;
       _localizationService = localizationService;
       _discountService = discountService;
+      _manufacturerService = manufacturerService;
       _webHelper = webHelper;
       _orderItemRepository = orderItemRepository;
+      _discountProductMappingRepository = discountProductMappingRepository;
+      _discountCategoryMappingRepository = discountCategoryMappingRepository;
+      _discountManufacturerMappingRepository = discountManufacturerMappingRepository;
     }
 
     public async Task SubmitForecastAsync(ForecastSubmissionModel model)
@@ -213,11 +225,9 @@ namespace Majako.Plugin.Misc.SalesForecasting.Services
 
     private async Task<HttpResponseMessage> GetForecastResponse(SalesForecastingPluginSettings settings)
     {
-      using (var requestMessage = new HttpRequestMessage(HttpMethod.Get, $"{BASE_URL}forecast/{settings.ForecastId}"))
-      {
-        requestMessage.Headers.Add("subscription-key", settings.ApiKey);
-        return await _httpClient.SendAsync(requestMessage).ConfigureAwait(false);
-      }
+      using var requestMessage = new HttpRequestMessage(HttpMethod.Get, $"{BASE_URL}forecast/{settings.ForecastId}");
+      requestMessage.Headers.Add("subscription-key", settings.ApiKey);
+      return await _httpClient.SendAsync(requestMessage).ConfigureAwait(false);
     }
 
     private IEnumerable<Sale> GetData(int[] productIds)
@@ -253,7 +263,7 @@ namespace Majako.Plugin.Misc.SalesForecasting.Services
           showHidden: true,
           startDateUtc: from.ToUniversalTime(),
           endDateUtc: until.ToUniversalTime()
-        );
+        ).ToArray();
 
       var discountsByProduct = products.ToDictionary(
         p => p.Id,
@@ -262,30 +272,58 @@ namespace Majako.Plugin.Misc.SalesForecasting.Services
 
       void add(int key, Discount value) => discountsByProduct.GetValueOrDefault(key)?.Add(value);
 
-      var productsById = products.ToDictionary(p => p.Id);
-      foreach (var dpm in discounts.SelectMany(d => d.DiscountProductMappings.Where(x => productsById.ContainsKey(x.ProductId))))
-        add(dpm.ProductId, dpm.Discount);
+      var productIds = products.Select(p => p.Id).ToArray();
 
-      var productsByManufacturer = products
-        .SelectMany(p => p.ProductManufacturers.Select(m => (mid: m.ManufacturerId, pid: p.Id)))
+      var discountProductMappings =
+        from product in products.ToArray()
+        where product.HasDiscountsApplied
+        join dpm in _discountProductMappingRepository.Table on product.Id equals dpm.EntityId
+        join discount in discounts.Where(d => d.DiscountType == DiscountType.AssignedToSkus).ToArray()
+          on dpm.DiscountId equals discount.Id
+        select new { pid = dpm.EntityId, discount };
+
+      foreach (var dpm in discountProductMappings)
+        add(dpm.pid, dpm.discount);
+
+      var manufacturers = _manufacturerService.GetProductManufacturerIds(productIds);
+
+      var discountManufacturerMappings =
+        from manufacturerId in manufacturers.Values.SelectMany(xs => xs).Distinct().ToArray()
+        join dmm in _discountManufacturerMappingRepository.Table on manufacturerId equals dmm.EntityId
+        join discount in discounts.Where(d => d.DiscountType == DiscountType.AssignedToManufacturers).ToArray()
+          on dmm.DiscountId equals discount.Id
+        select new { mid = dmm.EntityId, discount };
+      var productsByManufacturer = manufacturers
+        .SelectMany(kv => kv.Value.Select(mid => (mid, pid: kv.Key)))
         .ToLookup(x => x.mid, x => x.pid);
-      foreach (var dmm in discounts.SelectMany(d => d.DiscountManufacturerMappings))
+      foreach (var dmm in discountManufacturerMappings)
       {
-        foreach (var grouping in productsByManufacturer[dmm.ManufacturerId])
-          add(grouping, dmm.Discount);
+        foreach (var grouping in productsByManufacturer[dmm.mid])
+          add(grouping, dmm.discount);
       }
 
       var productsByCategory = _categoryService
-        .GetProductCategoryIds(productsById.Keys.ToArray())
+        .GetProductCategoryIds(productIds)
         .SelectMany(kv => kv.Value.Select(cid => (cid, pid: kv.Key)))
         .ToLookup(x => x.cid, x => x.pid);
-      foreach (var dcm in discounts.SelectMany(d => d.DiscountCategoryMappings))
+      var discountCategoryMappings =
+        from categoryId in productsByCategory.Select(kv => kv.Key).ToArray()
+        join dcm in _discountCategoryMappingRepository.Table on categoryId equals dcm.EntityId
+        join discount in discounts.Where(d => d.DiscountType == DiscountType.AssignedToCategories).ToArray()
+          on dcm.DiscountId equals discount.Id
+        select new { cid = dcm.EntityId, discount };
+      foreach (var dcm in discountCategoryMappings)
       {
-        foreach (var grouping in productsByCategory[dcm.CategoryId])
-          add(grouping, dcm.Discount);
+        foreach (var grouping in productsByCategory[dcm.cid])
+          add(grouping, dcm.discount);
       }
 
-      return discountsByProduct.ToDictionary(kv => kv.Key, kv => kv.Value.ToArray());
+      var orderDiscounts = discounts.Where(d => d.DiscountType == DiscountType.AssignedToOrderTotal).ToArray();
+
+      return discountsByProduct.ToDictionary(
+        kv => kv.Key,
+        kv => kv.Value.Concat(orderDiscounts).ToArray()
+      );
     }
 
     private IDictionary<string, float> GetAppliedDiscounts(IDictionary<int, int[]> discountsByProduct)
@@ -303,7 +341,7 @@ namespace Majako.Plugin.Misc.SalesForecasting.Services
           if (price == 0)
             return (pid: kv.Key, discount: 0m);
           _discountService.GetPreferredDiscount(
-                  kv.Value.Select(d => _discountService.MapDiscount(discountsById[d])).ToList(),
+                  kv.Value.Select(discountsById.GetValueOrDefault).ToList(),
                   price,
                   out var discountAmount
                 );
