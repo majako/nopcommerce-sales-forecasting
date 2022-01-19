@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 using Microsoft.AspNetCore.Routing;
 using Nop.Core;
 using Nop.Services.Common;
@@ -45,42 +46,44 @@ namespace Majako.Plugin.Misc.SalesForecasting
       return $"{_webHelper.GetStoreLocation()}{BASE_ROUTE}/{CONFIGURE}";
     }
 
-    public void ManageSiteMap(SiteMapNode rootNode)
+    public async Task ManageSiteMapAsync(SiteMapNode rootNode)
     {
       var salesNode = rootNode.ChildNodes.FirstOrDefault(x => x.SystemName == "Sales");
       if (salesNode == null)
         return;
       salesNode.ChildNodes.Insert(salesNode.ChildNodes.Count, new SiteMapNode
       {
-        Title = _localizationService.GetResource("Majako.Plugin.Misc.SalesForecasting.SalesForecasting"),
+        Title = await _localizationService.GetResourceAsync("Majako.Plugin.Misc.SalesForecasting.SalesForecasting"),
         Url = $"/{BASE_ROUTE}/{FORECAST}",
         Visible = true,
         RouteValues = new RouteValueDictionary { { "Area", "Admin" } },
-        IconClass = "fa-dot-circle-o",
+        IconClass = "far fa-dot-circle",
         SystemName = "Misc.SalesForecasting"
       });
     }
 
-    public override void Install()
+    public override async Task InstallAsync()
     {
-      var settings = _settingService.LoadSetting<SalesForecastingPluginSettings>();
-      _settingService.SaveSetting(settings);
-      foreach (var (file, language) in GetLocalizations())
+      var settings = await _settingService.LoadSettingAsync<SalesForecastingPluginSettings>();
+      var settingsTask = _settingService.SaveSettingAsync(settings);
+      await Task.WhenAll(await GetLocalizationsAsync().Select(async t =>
       {
-        using var streamReader = file.OpenText();
-        _localizationService.ImportResourcesFromXml(language, streamReader);
-      }
-      base.Install();
+        using var streamReader = t.file.OpenText();
+        await _localizationService.ImportResourcesFromXmlAsync(t.language, streamReader);
+      }).ToArrayAsync());
+      await settingsTask;
+      await base.InstallAsync();
     }
 
-    public override void Uninstall()
+    public override async Task UninstallAsync()
     {
-      _settingService.DeleteSetting<SalesForecastingPluginSettings>();
-      _localizationService.DeletePluginLocaleResources("Majako.Plugin.Misc.SalesForecasting");
-      base.Uninstall();
+      var settingsTask = _settingService.DeleteSettingAsync<SalesForecastingPluginSettings>();
+      await _localizationService.DeleteLocaleResourcesAsync("Majako.Plugin.Misc.SalesForecasting");
+      await settingsTask;
+      await base.UninstallAsync();
     }
 
-    private IEnumerable<(FileInfo file, Language language)> GetLocalizations()
+    private async IAsyncEnumerable<(FileInfo file, Language language)> GetLocalizationsAsync()
     {
       var pluginsDirectory = _nopFileProvider.MapPath(NopPluginDefaults.Path);
       var files = Directory
@@ -89,8 +92,8 @@ namespace Majako.Plugin.Misc.SalesForecasting
               "*.xml")
           .Select(x => new FileInfo(x))
           .ToDictionary(x => Path.GetFileNameWithoutExtension(x.Name).ToLower());
-      var languages = _languageService
-          .GetAllLanguages()
+      var languages = (await _languageService
+          .GetAllLanguagesAsync())
           .ToLookup(x => x.LanguageCulture.ToLower());
 
       static string getLanguageCode(string culture) => culture.Split('-', 1)[0];

@@ -3,14 +3,17 @@
 @model ForecastSearchModel
 
 @{
-    ViewBag.Title = T("Majako.Plugin.Misc.SalesForecasting.SalesForecasting").Text;
-    Html.SetActiveMenuItemSystemName("Sales.SalesForecasting");
-    Layout = "~/Areas/Admin/Views/Shared/_AdminLayout.cshtml";
+  ViewBag.Title = T("Majako.Plugin.Misc.SalesForecasting.SalesForecasting").Text;
+  Html.SetActiveMenuItemSystemName("Sales.SalesForecasting");
+  Layout = "~/Areas/Admin/Views/Shared/_AdminLayout.cshtml";
 }
 
+<div class="content-header clearfix">
+  <h1 class="pull-left">
+    @T("Majako.Plugin.Misc.SalesForecasting.SalesForecasting")
+  </h1>
+</div>
 
-<form asp-controller="SalesForecasting" asp-action="GetPreliminary" method="post">
-    <div class="content">
-        @await Html.PartialAsync("ForecastSearchPanel.cshtml", Model)
-    </div>
-</form>
+<div class="content">
+  @await Html.PartialAsync("ForecastSearchPanel.cshtml", Model)
+</div>

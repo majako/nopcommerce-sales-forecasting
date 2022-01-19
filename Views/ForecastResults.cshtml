@@ -17,11 +17,11 @@
         Length = Model.PageSize,
         LengthMenu = Model.AvailablePageSizes,
         Filters = new List<FilterParameter>
-{
+        {
             new FilterParameter(nameof(Model.ResultsJson))
         },
         ColumnCollection = new List<ColumnProperty>
-{
+        {
             new ColumnProperty(nameof(ForecastResponse.Name))
             {
                 Title = T("Majako.Plugin.Misc.SalesForecasting.ProductName").Text
@@ -46,19 +46,24 @@
     };
 }
 
+<div class="content-header clearfix">
+    <h1 class="pull-left">
+        @T("Majako.Plugin.Misc.SalesForecasting.SalesForecasting")
+    </h1>
+</div>
 
-<section class="content">
+<div class="content">
     <div class="form-horizontal">
-        <div class="panel-group">
-            <div class="panel panel-default">
-                <div class="panel-body">
+        <div class="cards-group">
+            <div class="card card-default">
+                <div class="card-body">
                     @await Html.PartialAsync("Table", tableModel)
                 </div>
 
                 <div class="card-body">
                     <div class="col-md-6">
                         <div class="form-group row">
-                            <div class="col-md-8 col-md-offset-4">
+                            <div class="col-md-8 text-center">
                                 @using(@Html.BeginForm("NewForecast", "SalesForecasting", FormMethod.Post))
                                 {
                                     <button type="submit" class="btn btn-primary" id="new-forecast">
@@ -70,8 +75,8 @@
                         </div>
                     </div>
                     <div class="col-md-6">
-                        <div class="form-group">
-                            <div class="col-md-8 col-md-offset-4">
+                        <div class="form-group row">
+                            <div class="col-md-8 text-center">
                                 @using(@Html.BeginForm("ExportCsv", "SalesForecasting", FormMethod.Post))
                                 {
                                     <button type="submit" class="btn bg-olive" id="export-csv">
@@ -86,6 +91,6 @@
             </div>
         </div>
     </div>
-</section>
+</div>
 
 <input type="hidden" id="@(nameof(Model.ResultsJson))" value="@(Model.ResultsJson)" />

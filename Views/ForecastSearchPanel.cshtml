@@ -1,48 +1,34 @@
 ﻿@using Majako.Plugin.Misc.SalesForecasting.Models
 @model ForecastSearchModel
 
-<form asp-controller="SalesForecasting" asp-action="Forecast" method="post">
-    <div class="form-horizontal">
-        <div class="panel panel-default">
-            <div class="panel-body">
-                @await Html.PartialAsync("ProductSearch.cshtml", Model)
+<form asp-controller="SalesForecasting" asp-action="GetPreliminary" method="post">
+  <div class="form-horizontal">
+    <div class="cards-group">
+      <div class="card card-default">
+        <div class="card-body">
+          @await Html.PartialAsync("ProductSearch.cshtml", Model)
 
-        <div class="content-header clearfix">
-            <h1 class="pull-left">
-                @T("Majako.Plugin.Misc.SalesForecasting.SalesForecasting")
-            </h1>
-        </div>
-
-        <form asp-controller="SalesForecasting" asp-action="Forecast" method="post">
-            <section class="content">
-                <div class="container-fluid">
-                    <div class="card card-default">
-                        <div class="card-body">
-                            @await Html.PartialAsync("ProductSearch.cshtml", Model)
-
-                            <div class="card-body row">
-                                <div class="col-md-5">
-                                    <div class="form-group row">
-                                        <div class="col-md-4">
-                                            <nop-label asp-for="PeriodLength" />
-                                        </div>
-                                        <div class="col-md-8">
-                                            <nop-editor asp-for="PeriodLength" />
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="row">
-                                <div class="col-md-7 col-md-offset-5">
-                                    <button type="submit" id="forecast-submit" class="btn btn-primary">
-                                        @T("Majako.Plugin.Misc.SalesForecasting.Submit")
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
+          <div class="card-body row">
+            <div class="col-md-5">
+              <div class="form-group row">
+                <div class="col-md-4">
+                  <nop-label asp-for="PeriodLength" />
                 </div>
-            </section>
-        </form>
+                <div class="col-md-8">
+                  <nop-editor asp-for="PeriodLength" />
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="row">
+            <div class="text-center col-12">
+              <button type="submit" id="forecast-submit" class="btn btn-primary">
+                @T("Majako.Plugin.Misc.SalesForecasting.Submit")
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
-</div>
+  </div>
+</form>
