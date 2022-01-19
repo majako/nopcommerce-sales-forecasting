@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
@@ -121,7 +121,7 @@ namespace Majako.Plugin.Misc.SalesForecasting.Services
         Period = model.PeriodLength,
         Discounts = model.BlanketDiscount > 0 && model.BlanketDiscount <= 1
             ? discountsByProduct.ToDictionary(kv => kv.Key.ToString(), kv => model.BlanketDiscount)
-            : GetAppliedDiscounts(discountsByProduct)
+            : GetAppliedDiscounts(discountsByProduct, model.PeriodLength)
       };
       using (var requestMessage = new HttpRequestMessage(HttpMethod.Post, $"{BASE_URL}forecast"))
       {
@@ -155,8 +155,8 @@ namespace Majako.Plugin.Misc.SalesForecasting.Services
     public PreliminaryForecastModel GetPreliminaryData(ForecastSearchModel searchModel)
     {
       var products = GetProductsFromSearch(searchModel);
-      var startDate = DateTime.Today;
-      var discounts = GetDiscounts(products, startDate, startDate + TimeSpan.FromDays(searchModel.PeriodLength));
+      var (fromUtc, untilUtc) = GetPeriod(searchModel.PeriodLength);
+      var discounts = GetDiscounts(products, fromUtc, untilUtc);
       return new PreliminaryForecastModel
       {
         DiscountsByProduct = discounts,
@@ -246,14 +246,13 @@ namespace Majako.Plugin.Misc.SalesForecasting.Services
       });
     }
 
-    private IDictionary<int, Discount[]> GetDiscounts(IEnumerable<Product> products, DateTime from, DateTime until)
+    private IDictionary<int, Discount[]> GetDiscounts(IEnumerable<Product> products, DateTime fromUtc, DateTime untilUtc)
     {
       var discounts = _discountService
-        .GetAllDiscounts(
-          showHidden: true,
-          startDateUtc: from.ToUniversalTime(),
-          endDateUtc: until.ToUniversalTime()
-        );
+        .GetAllDiscounts(showHidden: true)
+        .Where(d => !d.StartDateUtc.HasValue || d.StartDateUtc <= untilUtc)
+        .Where(d => !d.EndDateUtc.HasValue || d.EndDateUtc >= fromUtc)
+        .ToArray();
 
       var discountsByProduct = products.ToDictionary(
         p => p.Id,
@@ -295,7 +294,7 @@ namespace Majako.Plugin.Misc.SalesForecasting.Services
       );
     }
 
-    private IDictionary<string, float> GetAppliedDiscounts(IDictionary<int, int[]> discountsByProduct)
+    private IDictionary<string, float> GetAppliedDiscounts(IDictionary<int, int[]> discountsByProduct, int periodLength)
     {
       var productsById = _productService
         .GetProductsByIds(discountsByProduct.Keys.ToArray())
@@ -303,18 +302,30 @@ namespace Majako.Plugin.Misc.SalesForecasting.Services
       var discountsById = _discountService
         .GetAllDiscounts(showHidden: true)
         .ToDictionary(d => d.Id);
+      var (fromUtc, untilUtc) = GetPeriod(periodLength);
+      float coverage(Discount discount)
+      {
+        var startDiff = discount.StartDateUtc.HasValue
+          ? Math.Max((discount.StartDateUtc.Value - fromUtc).TotalDays, 0)
+          : 0;
+        var endDiff = discount.EndDateUtc.HasValue
+          ? Math.Max((untilUtc - discount.EndDateUtc.Value).TotalDays, 0)
+          : 0;
+        return 1 - (float)(startDiff + endDiff) / periodLength;
+      }
       return discountsByProduct
         .Select(kv =>
         {
           var price = productsById[kv.Key].Price;
           if (price == 0)
             return (pid: kv.Key, discount: 0m);
-          _discountService.GetPreferredDiscount(
+          var appliedDiscounts = _discountService.GetPreferredDiscount(
                   kv.Value.Select(d => _discountService.MapDiscount(discountsById[d])).ToList(),
                   price,
                   out var discountAmount
                 );
-          return (pid: kv.Key, discount: discountAmount / price);
+          var avgCoverage = (decimal)appliedDiscounts.Select(coverage).Average();
+          return (pid: kv.Key, discount: avgCoverage * discountAmount / price);
         })
         .Where(t => t.discount != 0)
         .ToDictionary(
@@ -355,6 +366,12 @@ namespace Majako.Plugin.Misc.SalesForecasting.Services
           keywords: productSearchModel.SearchProductName,
           pageIndex: 0, pageSize: int.MaxValue,
           overridePublished: overridePublished);
+    }
+
+    private static (DateTime fromUtc, DateTime untilUtc) GetPeriod(int periodLength)
+    {
+      var startDate = DateTime.Today.AddDays(1).ToUniversalTime();
+      return (startDate, startDate + TimeSpan.FromDays(periodLength));
     }
   }
 }
