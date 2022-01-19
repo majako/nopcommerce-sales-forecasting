@@ -7,5 +7,8 @@ namespace Majako.Plugin.Misc.SalesForecasting
     {
         [NopResourceDisplayName("Majako.Plugin.Misc.SalesForecasting.ApiKey")]
         public string ApiKey { get; set; }
+
+        public string ForecastId { get; set; }
+        public string SearchModelJson { get; set; }
     }
 }
