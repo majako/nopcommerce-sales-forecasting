@@ -16,7 +16,6 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\Libraries\Majako.Plugin.Common\Majako.Plugin.Common.csproj" />
     <ProjectReference Include="..\Libraries\Nop.Core\Nop.Core.csproj" />
     <ProjectReference Include="..\Presentation\Nop.Web\Nop.Web.csproj" />
     <ProjectReference Include="..\Libraries\Nop.Services\Nop.Services.csproj" />
