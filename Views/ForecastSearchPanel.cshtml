@@ -1,12 +1,11 @@
-﻿@using Nop.Web.Framework.UI
-@using Nop.Web.Areas.Admin.Models.Catalog
-@using Majako.Plugin.Misc.SalesForecasting.Models
-@using Nop.Web.Framework.Models.DataTables
+﻿@using Majako.Plugin.Misc.SalesForecasting.Models
 @model ForecastSearchModel
 
-
-<div class="card card-default">
-    <div class="card-body">
+<form asp-controller="SalesForecasting" asp-action="Forecast" method="post">
+    <div class="form-horizontal">
+        <div class="panel panel-default">
+            <div class="panel-body">
+                @await Html.PartialAsync("ProductSearch.cshtml", Model)
 
         <div class="content-header clearfix">
             <h1 class="pull-left">

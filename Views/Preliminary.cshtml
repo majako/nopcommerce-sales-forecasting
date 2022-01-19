@@ -1,0 +1,107 @@
+﻿@using Nop.Web.Framework.UI
+@using System.Linq
+@using System
+@using Majako.Plugin.Misc.SalesForecasting.Models
+@model PreliminaryForecastModel
+
+@{
+  ViewBag.Title = T("Majako.Plugin.Misc.SalesForecasting.SalesForecasting").Text;
+  Html.SetActiveMenuItemSystemName("Sales.SalesForecasting");
+  Layout = "~/Areas/Admin/Views/Shared/_AdminLayout.cshtml";
+
+  var discounts = Model.DiscountsByProduct.Values.SelectMany(ds => ds).ToHashSet();
+  var headerId = Guid.NewGuid();
+  var bodyId = Guid.NewGuid();
+  var blanketDiscountId = Guid.NewGuid();
+  var submitButtonId = Guid.NewGuid();
+}
+
+<div class="content-header clearfix">
+  <h1 class="pull-left">
+    @T("Majako.Plugin.Misc.SalesForecasting.SalesForecasting")
+  </h1>
+</div>
+
+<div class="content">
+  <div class="panel panel-default">
+    <div class="panel-heading" id="@headerId">
+      @T("Majako.Plugin.Misc.SalesForecasting.SelectDiscounts")
+    </div>
+    <div class="panel-body" id="@bodyId">
+      <form>
+        <div class="row">
+          <div class="col-md-5">
+            @foreach (var discount in discounts)
+            {
+              <div class="form-group">
+                <input id="@discount.Id" type="checkbox" checked />
+                <label class="custom-control-label" for="@discount.Id"><strong>@discount.Name</strong></label>
+              </div>
+            }
+          </div>
+        </div>
+        <div class="row">
+          <div class="col-md-5">
+            <div class="form-group">
+              <input id="@blanketDiscountId" type="number" step="1" max="100" min="0" />
+              <label class="custom-control-label" for="@blanketDiscountId">
+                <strong>@T("Majako.Plugin.Misc.SalesForecasting.BlanketDiscount")</strong>
+              </label>
+              <div>
+                @T("Majako.Plugin.Misc.SalesForecasting.BlanketDiscountDescription")
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="row">
+          <div class="form-group">
+            <div class="col-md-8 col-md-offset-4">
+              <button type="button" id="@submitButtonId" class="btn btn-primary" onclick="majako_salesforecasting_submit()">
+                @T("Majako.Plugin.Misc.SalesForecasting.Submit")
+              </button>
+            </div>
+          </div>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<script>
+  function majako_salesforecasting_submit() {
+    let selectedDiscounts = new Set(
+      [@Html.Raw(string.Join(',', discounts.Select(d => d.Id)))]
+    );
+    selectedDiscounts = new Set(Array.from(selectedDiscounts).filter(d => document.getElementById(d).checked));
+    const discountsByProduct = [
+      @Html.Raw(string.Join(',', Model.DiscountsByProduct.Select(kv =>
+        $"{{key:{kv.Key},value:[{string.Join(',', kv.Value.Select(d => d.Id))}].filter(v => selectedDiscounts.has(v))}}")))
+    ];
+
+    const data = {
+      discountsByProduct,
+      blanketDiscount: document.getElementById('@blanketDiscountId').value / 100,
+      periodLength: @Model.PeriodLength,
+    };
+
+    const submitButton = document.getElementById('@submitButtonId');
+    submitButton.disabled = true;
+    submitButton.innerText = '@T("Majako.Plugin.Misc.SalesForecasting.Submitting")';
+
+    $.ajax({
+      cache: false,
+      contentType: 'application/json',
+      type: 'POST',
+      data: JSON.stringify(data),
+      success: () => {
+        document.getElementById('@headerId').innerText = '@T("Majako.Plugin.Misc.SalesForecasting.ForecastSubmittedHeader")';
+        document.getElementById('@bodyId').innerHTML = '@T("Majako.Plugin.Misc.SalesForecasting.ForecastSubmittedBody")';
+      },
+      error: () => {
+        document.getElementById('@headerId').innerText = '';
+        document.getElementById('@bodyId').innerHTML = '@T("Majako.Plugin.Misc.SalesForecasting.ForecastFailed")';
+      },
+      url: '@(Url.Action("Forecast", "SalesForecasting"))'
+    });
+  }
+</script>
