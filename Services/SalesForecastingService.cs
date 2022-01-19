@@ -403,7 +403,7 @@ namespace Majako.Plugin.Misc.SalesForecasting.Services
 
     private static (DateTime fromUtc, DateTime untilUtc) GetPeriod(int periodLength)
     {
-      var startDate = DateTime.Today.ToUniversalTime();
+      var startDate = DateTime.Today.AddDays(1).ToUniversalTime();
       return (startDate, startDate + TimeSpan.FromDays(periodLength));
     }
   }
