@@ -111,7 +111,7 @@ jobs:
         uses: actions/checkout@v2
         with:
           repository: 'nopSolutions/nopCommerce'
-          ref: 'release-4.50.0-RC'
+          ref: 'release-4.50.0-rc'
           path: ${{ github.workspace }}/nopCommerce
         
       - name: '[4.5] Clone Misc.SalesForecasting'
