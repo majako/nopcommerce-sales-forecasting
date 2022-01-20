@@ -17,14 +17,6 @@ jobs:
           repository: 'nopSolutions/nopCommerce'
           ref: 'release-4.20'
           path: ${{ github.workspace }}/nopCommerce
-      
-      - name: '[4.2] Clone Majako.Plugin.Common'
-        uses: actions/checkout@v2
-        with:
-          token: '${{ secrets.BUILD_READ_PAT }}'
-          repository: majako/nopcommerce-plugin-common
-          ref: 'master'
-          path: ${{ github.workspace }}/nopCommerce/src/Libraries/Majako.Plugin.Common
         
       - name: '[4.2] Clone Misc.SalesForecasting'
         uses: actions/checkout@v2
@@ -56,14 +48,6 @@ jobs:
           repository: 'nopSolutions/nopCommerce'
           ref: 'release-4.30'
           path: ${{ github.workspace }}/nopCommerce
-      
-      - name: '[4.3] Clone Majako.Plugin.Common'
-        uses: actions/checkout@v2
-        with:
-          token: '${{ secrets.BUILD_READ_PAT }}'
-          repository: majako/nopcommerce-plugin-common
-          ref: 'v4.3'
-          path: ${{ github.workspace }}/nopCommerce/src/Libraries/nopcommerce-plugin-common
         
       - name: '[4.3] Clone Misc.SalesForecasting'
         uses: actions/checkout@v2
@@ -95,14 +79,6 @@ jobs:
           repository: 'nopSolutions/nopCommerce'
           ref: 'release-4.40.4'
           path: ${{ github.workspace }}/nopCommerce
-      
-      - name: '[4.4] Clone Majako.Plugin.Common'
-        uses: actions/checkout@v2
-        with:
-          token: '${{ secrets.BUILD_READ_PAT }}'
-          repository: majako/nopcommerce-plugin-common
-          ref: 'v4.4'
-          path: ${{ github.workspace }}/nopCommerce/src/Libraries/nopcommerce-plugin-common
         
       - name: '[4.4] Clone Misc.SalesForecasting'
         uses: actions/checkout@v2
@@ -129,6 +105,42 @@ jobs:
       - name: '[4.4] Remove temp nopCommerce folder'
         run: rm -rf ${{ github.workspace }}/nopCommerce
       
+    ####### 4.5 #######
+      
+      - name: '[4.5] Clone nopCommerce'
+        uses: actions/checkout@v2
+        with:
+          repository: 'nopSolutions/nopCommerce'
+          ref: 'release-4.50.0-RC'
+          path: ${{ github.workspace }}/nopCommerce
+        
+      - name: '[4.5] Clone Misc.SalesForecasting'
+        uses: actions/checkout@v2
+        with:
+          token: '${{ secrets.BUILD_READ_PAT }}'
+          repository: majako/nopcommerce-sales-forecasting
+          ref: '4.5'
+          path: ${{ github.workspace }}/nopCommerce/src/Misc.SalesForecasting
+          
+      - name: '[4.5] Install dotnet'
+        uses: actions/setup-dotnet@v1.8.1
+        with:
+          dotnet-version: 6.0.x
+            
+      - name: '[4.5] Build plugin'
+        run: dotnet build ${{ github.workspace }}/nopCommerce/src/Misc.SalesForecasting/Majako.Plugin.Misc.SalesForecasting.csproj -c Release
+      
+      - name: '[4.5] Remove runtimes folder'
+        run: rm -rf ${{ github.workspace }}/nopCommerce/src/Presentation/Nop.Web/Plugins/Misc.SalesForecasting/runtimes
+        
+      - name: '[4.5] Copy plugin to artifact'
+        run: mkdir -p ${{ github.workspace }}/artifact/Majako.SalesForecasting/v4.5 && cp -r ${{ github.workspace }}/nopCommerce/src/Presentation/Nop.Web/Plugins/Misc.SalesForecasting ${{ github.workspace }}/artifact/Majako.SalesForecasting/v4.5/Misc.SalesForecasting
+        
+      - name: '[4.5] Remove temp nopCommerce folder'
+        run: rm -rf ${{ github.workspace }}/nopCommerce
+      
+   ####### all #######
+      
       - name: Write to plugins.json
         uses: finnp/create-file-action@master
         env:
@@ -151,6 +163,12 @@ jobs:
                           "Type": "Plugin",
                           "SupportedVersion": "4.40",
                           "DirectoryPath": "Majako.SalesForecasting/v4.4/Misc.SalesForecasting/",
+                          "SystemName": "Misc.SalesForecasting"
+                        },
+                        {
+                          "Type": "Plugin",
+                          "SupportedVersion": "4.50",
+                          "DirectoryPath": "Majako.SalesForecasting/v4.5/Misc.SalesForecasting/",
                           "SystemName": "Misc.SalesForecasting"
                         }
                       ]
