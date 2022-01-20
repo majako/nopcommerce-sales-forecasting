@@ -303,7 +303,7 @@ namespace Majako.Plugin.Misc.SalesForecasting.Services
         .GetAllDiscounts(showHidden: true)
         .ToDictionary(d => d.Id);
       var (fromUtc, untilUtc) = GetPeriod(periodLength);
-      float coverage(Discount discount)
+      float coverage(DiscountForCaching discount)
       {
         var startDiff = discount.StartDateUtc.HasValue
           ? Math.Max((discount.StartDateUtc.Value - fromUtc).TotalDays, 0)
