@@ -145,7 +145,7 @@ namespace Majako.Plugin.Misc.SalesForecasting.Controllers
         var resultModel = new ForecastResultModel();
         if (forecast == null)
         {
-          _notificationService.WarningNotification(await _localizationService.GetResourceAsync("Majako.Plugin.Misc.SalesForecasting.ForecastNotReady"));
+          _notificationService.WarningNotification(_localizationService.GetResource("Majako.Plugin.Misc.SalesForecasting.ForecastNotReady"));
         }
         else
         {
