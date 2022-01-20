@@ -6,7 +6,7 @@
 
 @{
   ViewBag.Title = T("Majako.Plugin.Misc.SalesForecasting.SalesForecasting").Text;
-  Html.SetActiveMenuItemSystemName("Sales.SalesForecasting");
+  NopHtml.SetActiveMenuItemSystemName("Sales.SalesForecasting");
   Layout = "~/Areas/Admin/Views/Shared/_AdminLayout.cshtml";
 
   var discounts = Model.DiscountsByProduct.Values.SelectMany(ds => ds).ToHashSet();
