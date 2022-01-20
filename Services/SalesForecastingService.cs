@@ -185,7 +185,7 @@ namespace Majako.Plugin.Misc.SalesForecasting.Services
       var response = await GetForecastResponse(settings);
       response.EnsureSuccessStatusCode();
       if (response.StatusCode != HttpStatusCode.OK)
-        throw new Exception("Forecast not ready");
+        return null;
       var content = JsonConvert.DeserializeObject<RawForecastResponse>(await response.Content.ReadAsStringAsync().ConfigureAwait(false));
       var predictions = content.Data.Predictions.ToDictionary(p => p.ProductId, p => p.Quantity);
       var searchModel = JsonConvert.DeserializeObject<ForecastSearchModel>(settings.SearchModelJson);
@@ -219,7 +219,7 @@ namespace Majako.Plugin.Misc.SalesForecasting.Services
           _notificationService.ErrorNotification(_localizationService.GetResource("Majako.Plugin.Misc.SalesForecasting.ForecastFailed"));
           break;
         }
-        await Task.Delay(5000);
+        await Task.Delay(5000, token);
       }
     }
 

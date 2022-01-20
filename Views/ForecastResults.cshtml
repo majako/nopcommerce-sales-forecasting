@@ -61,29 +61,27 @@
                 </div>
 
                 <div class="panel-body">
-                    <div class="col-md-6">
-                        <div class="form-group">
-                            <div class="col-md-8 col-md-offset-4">
-                                @using(@Html.BeginForm("NewForecast", "SalesForecasting", FormMethod.Post))
-                                {
+                    <div class="form-group row">
+                        <div class="col-12">
+                            <div class="row">
+                              <div class="col-md-3 col-md-offset-3">
+                                  @using (@Html.BeginForm("NewForecast", "SalesForecasting", FormMethod.Post))
+                                  {
                                     <button type="submit" class="btn btn-primary" id="new-forecast">
                                         <i class="fa fa-plus-square"></i>
                                         @T("Majako.Plugin.Misc.SalesForecasting.NewForecast")
                                     </button>
-                                }
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-md-6">
-                        <div class="form-group">
-                            <div class="col-md-8 col-md-offset-4">
-                                @using(@Html.BeginForm("ExportCsv", "SalesForecasting", FormMethod.Post))
-                                {
+                                  }
+                              </div>
+                              <div class="col-md-6 col-md-offset-3">
+                                  @using (@Html.BeginForm("ExportCsv", "SalesForecasting", FormMethod.Post))
+                                  {
                                     <button type="submit" class="btn bg-olive" id="export-csv">
                                         <i class="fa fa-download"></i>
                                         @T("Majako.Plugin.Misc.SalesForecasting.SaveCsv")
                                     </button>
-                                }
+                                  }
+                              </div>
                             </div>
                         </div>
                     </div>
