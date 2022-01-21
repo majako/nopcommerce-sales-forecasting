@@ -261,9 +261,6 @@ namespace Majako.Plugin.Misc.SalesForecasting.Services
     private async Task<IDictionary<int, Discount[]>> GetDiscounts(IEnumerable<Product> products, DateTime fromUtc, DateTime untilUtc)
     {
       var discountTask = _discountService.GetAllDiscountsAsync(showHidden: true);
-      var productIds = products.Select(p => p.Id).ToArray();
-      var manufacturerTask = _manufacturerService.GetProductManufacturerIdsAsync(productIds);
-      var categoryTask = _categoryService.GetProductCategoryIdsAsync(productIds);
 
       var discountsByProduct = products.ToDictionary(
         p => p.Id,
@@ -277,48 +274,56 @@ namespace Majako.Plugin.Misc.SalesForecasting.Services
         .Where(d => !d.EndDateUtc.HasValue || d.EndDateUtc >= fromUtc)
         .ToArray();
 
+      // SQL server has a max limit of elements in an IN query, so we need to filter locally
+      var discountedProductIds = products
+        .Where(p => p.HasDiscountsApplied)
+        .Select(p => p.Id)
+        .ToHashSet();
       var discountProductMappings =
-        from product in products.ToArray()
-        where product.HasDiscountsApplied
-        join dpm in _discountProductMappingRepository.Table on product.Id equals dpm.EntityId
+        from dpm in _discountProductMappingRepository.Table
         join discount in discounts.Where(d => d.DiscountType == DiscountType.AssignedToSkus).ToArray()
           on dpm.DiscountId equals discount.Id
         select new { pid = dpm.EntityId, discount };
 
-      foreach (var dpm in discountProductMappings)
+      foreach (var dpm in discountProductMappings.ToArray().Where(x => discountedProductIds.Contains(x.pid)))
         add(dpm.pid, dpm.discount);
 
-      var manufacturers = await manufacturerTask;
-
       var discountManufacturerMappings =
-        from manufacturerId in manufacturers.Values.SelectMany(xs => xs).Distinct().ToArray()
-        join dmm in _discountManufacturerMappingRepository.Table on manufacturerId equals dmm.EntityId
-        join discount in discounts.Where(d => d.DiscountType == DiscountType.AssignedToManufacturers).ToArray()
-          on dmm.DiscountId equals discount.Id
-        select new { mid = dmm.EntityId, discount };
-      var productsByManufacturer = manufacturers
-        .SelectMany(kv => kv.Value.Select(mid => (mid, pid: kv.Key)))
-        .ToLookup(x => x.mid, x => x.pid);
-      foreach (var dmm in discountManufacturerMappings)
-      {
-        foreach (var grouping in productsByManufacturer[dmm.mid])
-          add(grouping, dmm.discount);
-      }
+        (from dmm in _discountManufacturerMappingRepository.Table
+         join discount in discounts.Where(d => d.DiscountType == DiscountType.AssignedToManufacturers).ToArray()
+           on dmm.DiscountId equals discount.Id
+         select new { mid = dmm.EntityId, discount })
+        .ToArray();
+      var productManufacturers = await Task.WhenAll(discountManufacturerMappings.Select(
+        dmm => _manufacturerService.GetProductManufacturersByManufacturerIdAsync(dmm.mid, showHidden: true)));
+      var productDiscountPairs = productManufacturers
+        .Zip(discountManufacturerMappings)
+        .SelectMany(z => z.First.Select(pm => (pm.ProductId, z.Second.discount)));
+      foreach (var (ProductId, discount) in productDiscountPairs)
+        add(ProductId, discount);
 
-      var productsByCategory = (await categoryTask)
-        .SelectMany(kv => kv.Value.Select(cid => (cid, pid: kv.Key)))
-        .ToLookup(x => x.cid, x => x.pid);
       var discountCategoryMappings =
-        from categoryId in productsByCategory.Select(kv => kv.Key).ToArray()
-        join dcm in _discountCategoryMappingRepository.Table on categoryId equals dcm.EntityId
-        join discount in discounts.Where(d => d.DiscountType == DiscountType.AssignedToCategories).ToArray()
-          on dcm.DiscountId equals discount.Id
-        select new { cid = dcm.EntityId, discount };
-      foreach (var dcm in discountCategoryMappings)
-      {
-        foreach (var grouping in productsByCategory[dcm.cid])
-          add(grouping, dcm.discount);
-      }
+        (from dcm in _discountCategoryMappingRepository.Table
+         join discount in discounts.Where(d => d.DiscountType == DiscountType.AssignedToCategories).ToArray()
+           on dcm.DiscountId equals discount.Id
+         select new { cid = dcm.EntityId, discount })
+        .ToArray();
+      var subCategories = await Task.WhenAll(discountCategoryMappings
+        .Where(dcm => dcm.discount.AppliedToSubCategories)
+        .Select(dcm => _categoryService.GetAllCategoriesByParentCategoryIdAsync(dcm.cid, showHidden: true)));
+      var applicableCategoryDiscountPairs = discountCategoryMappings
+        .Concat(subCategories
+          .Zip(discountCategoryMappings)
+          .SelectMany(z => z.First.Select(c => new { cid = c.Id, z.Second.discount })));
+      var productCategoryDiscountMapping = await Task.WhenAll(applicableCategoryDiscountPairs.Select(
+        async cd => new
+        {
+          productCategories = await _categoryService.GetProductCategoriesByCategoryIdAsync(cd.cid, showHidden: true),
+          cd.discount
+        }));
+      productDiscountPairs = productCategoryDiscountMapping.SelectMany(x => x.productCategories.Select(pc => (pc.ProductId, x.discount)));
+      foreach (var (ProductId, discount) in productDiscountPairs)
+        add(ProductId, discount);
 
       var orderDiscounts = discounts
         .Where(d => d.DiscountType == DiscountType.AssignedToOrderTotal || d.DiscountType == DiscountType.AssignedToOrderSubTotal)
