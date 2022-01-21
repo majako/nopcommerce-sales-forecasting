@@ -274,14 +274,18 @@ namespace Majako.Plugin.Misc.SalesForecasting.Services
           add(grouping, dmm.Discount);
       }
 
-      var productsByCategory = _categoryService
-        .GetProductCategoryIds(productsById.Keys.ToArray())
-        .SelectMany(kv => kv.Value.Select(cid => (cid, pid: kv.Key)))
-        .ToLookup(x => x.cid, x => x.pid);
       foreach (var dcm in discounts.SelectMany(d => d.DiscountCategoryMappings))
       {
-        foreach (var grouping in productsByCategory[dcm.CategoryId])
-          add(grouping, dcm.Discount);
+        var applicableCategoryIds = new List<int> { dcm.cid };
+        if (dcm.discount.AppliedToSubCategories)
+        {
+          applicableCategoryIds.AddRange(_categoryService
+            .GetAllCategoriesByParentCategoryId(dcm.cid, showHidden: true)
+            .Select(c => c.Id)
+          );
+        }
+        foreach (var pc in applicableCategoryIds.SelectMany(cid => _categoryService.GetProductCategoriesByCategoryId(cid, showHidden: true)))
+          add(pc.ProductId, dcm.discount);
       }
 
       var orderDiscounts = discounts
