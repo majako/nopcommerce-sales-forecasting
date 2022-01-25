@@ -289,18 +289,18 @@ namespace Majako.Plugin.Misc.SalesForecasting.Services
         .Select(p => p.Id)
         .ToHashSet();
       var discountProductMappings =
-        from dpm in _discountProductMappingRepository.Table
-        join discountId in getDiscountIdsByType(DiscountType.AssignedToSkus)
-          on dpm.DiscountId equals discountId
+        from discountId in getDiscountIdsByType(DiscountType.AssignedToSkus)
+        join dpm in _discountProductMappingRepository.Table
+          on discountId equals dpm.DiscountId
         select new { pid = dpm.EntityId, discountId };
 
       foreach (var dpm in discountProductMappings.ToArray().Where(x => discountedProductIds.Contains(x.pid)))
         add(dpm.pid, dpm.discountId);
 
       var discountManufacturerMappings =
-        (from dmm in _discountManufacturerMappingRepository.Table
-         join discountId in getDiscountIdsByType(DiscountType.AssignedToManufacturers)
-           on dmm.DiscountId equals discountId
+        (from discountId in getDiscountIdsByType(DiscountType.AssignedToManufacturers)
+         join dmm in _discountManufacturerMappingRepository.Table
+           on discountId equals dmm.DiscountId
          select new { mid = dmm.EntityId, discountId })
         .ToArray();
       var productManufacturers = await Task.WhenAll(discountManufacturerMappings.Select(
@@ -312,9 +312,9 @@ namespace Majako.Plugin.Misc.SalesForecasting.Services
         add(ProductId, discount);
 
       var discountCategoryMappings =
-        (from dcm in _discountCategoryMappingRepository.Table
-         join discountId in getDiscountIdsByType(DiscountType.AssignedToCategories)
-           on dcm.DiscountId equals discountId
+        (from discountId in getDiscountIdsByType(DiscountType.AssignedToCategories)
+         join dcm in _discountCategoryMappingRepository.Table
+          on discountId equals dcm.DiscountId
          select new { cid = dcm.EntityId, discountId })
         .ToArray();
       var subCategories = await Task.WhenAll(discountCategoryMappings
