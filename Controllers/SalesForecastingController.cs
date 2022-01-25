@@ -196,18 +196,19 @@ namespace Majako.Plugin.Misc.SalesForecasting.Controllers
       var forecast = await _salesForecastingService.GetForecastAsync().ConfigureAwait(false);
       var stream = new MemoryStream();
 
-      var header = string.Join(';', new[]
-      {
-                "Majako.Plugin.Misc.SalesForecasting.ProductName",
-                "Majako.Plugin.Misc.SalesForecasting.ProductId",
-                "Majako.Plugin.Misc.SalesForecasting.Sku",
-                "Majako.Plugin.Misc.SalesForecasting.Prediction"
-            }.Select(async resource => await _localizationService.GetResourceAsync(resource)));
+      var header = string.Join(';',
+        await Task.WhenAll(new[]
+        {
+          "Majako.Plugin.Misc.SalesForecasting.ProductName",
+          "Majako.Plugin.Misc.SalesForecasting.ProductId",
+          "Majako.Plugin.Misc.SalesForecasting.Sku",
+          "Majako.Plugin.Misc.SalesForecasting.Prediction"
+        }.Select(async resource => await _localizationService.GetResourceAsync(resource))));
       using (var streamWriter = new StreamWriter(stream))
       {
-        streamWriter.WriteLine(header);
+        await streamWriter.WriteLineAsync(header);
         foreach (var line in forecast)
-          streamWriter.WriteLine($"{line.Name};{line.ProductId};{line.Sku};{line.Prediction}");
+          await streamWriter.WriteLineAsync($"\"{line.Name}\";{line.ProductId};{line.Sku};{line.Prediction}");
       }
       return File(stream.ToArray(), "application/csv", $"sales_forecast_{DateTime.UtcNow.ToShortDateString()}.csv");
     }
