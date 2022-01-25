@@ -208,7 +208,7 @@ namespace Majako.Plugin.Misc.SalesForecasting.Controllers
       {
         await streamWriter.WriteLineAsync(header);
         foreach (var line in forecast)
-          await streamWriter.WriteLineAsync($"{line.Name};{line.ProductId};{line.Sku};{line.Prediction}");
+          await streamWriter.WriteLineAsync($"\"{line.Name}\";{line.ProductId};{line.Sku};{line.Prediction}");
       }
       return File(stream.ToArray(), "application/csv", $"sales_forecast_{DateTime.UtcNow.ToShortDateString()}.csv");
     }
