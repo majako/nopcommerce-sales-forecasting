@@ -365,7 +365,7 @@ namespace Majako.Plugin.Misc.SalesForecasting.Services
       return discountsByProduct
         .Select(kv =>
         {
-          var price = productsById.GetValueOrDefault(kv.Key, null).Price ?? 0;
+          var price = productsById.GetValueOrDefault(kv.Key)?.Price ?? 0;
           if (price == 0)
             return (pid: kv.Key, discount: 0m);
           var appliedDiscounts = _discountService.GetPreferredDiscount(
