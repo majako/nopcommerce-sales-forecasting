@@ -206,7 +206,7 @@ namespace Majako.Plugin.Misc.SalesForecasting.Controllers
       {
         streamWriter.WriteLine(header);
         foreach (var line in forecast)
-          streamWriter.WriteLine($"{line.Name};{line.ProductId};{line.Sku};{line.Prediction}");
+          streamWriter.WriteLine($"\"{line.Name}\";{line.ProductId};{line.Sku};{line.Prediction}");
       }
       return File(stream.ToArray(), "application/csv", $"sales_forecast_{DateTime.UtcNow.ToShortDateString()}.csv");
     }
