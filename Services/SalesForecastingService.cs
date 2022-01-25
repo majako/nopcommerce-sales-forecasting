@@ -272,7 +272,11 @@ namespace Majako.Plugin.Misc.SalesForecasting.Services
         .Where(d => !d.EndDateUtc.HasValue || d.EndDateUtc >= fromUtc)
         .ToDictionary(d => d.Id);
 
-      void add(int productId, int discountId) => discountsByProduct.GetValueOrDefault(productId)?.Add(discountsById[discountId]);
+      void add(int productId, int discountId)
+      {
+        if (discountsById.TryGetValue(discountId, out var discount))
+          discountsByProduct.GetValueOrDefault(productId)?.Add(discount);
+      }
       int[] getDiscountIdsByType(DiscountType discountType) =>
         discountsById.Values
         .Where(d => d.DiscountType == discountType)
@@ -314,7 +318,7 @@ namespace Majako.Plugin.Misc.SalesForecasting.Services
          select new { cid = dcm.EntityId, discountId })
         .ToArray();
       var subCategories = await Task.WhenAll(discountCategoryMappings
-        .Where(dcm => discountsById[dcm.discountId].AppliedToSubCategories)
+        .Where(dcm => discountsById.TryGetValue(dcm.discountId, out var discount) && discount.AppliedToSubCategories)
         .Select(dcm => _categoryService.GetAllCategoriesByParentCategoryIdAsync(dcm.cid, showHidden: true)));
       var applicableCategoryDiscountPairs = discountCategoryMappings
         .Concat(subCategories
