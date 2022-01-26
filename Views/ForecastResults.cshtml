@@ -16,10 +16,6 @@
         UrlRead = new DataUrl("GetResultsPage", "SalesForecasting", null),
         Length = Model.PageSize,
         LengthMenu = Model.AvailablePageSizes,
-        Filters = new List<FilterParameter>
-        {
-            new FilterParameter(nameof(Model.ResultsJson))
-        },
         ColumnCollection = new List<ColumnProperty>
         {
             new ColumnProperty(nameof(ForecastResponse.Name))
@@ -90,5 +86,3 @@
     </div>
   </div>
 </div>
-
-<input type="hidden" id="@(nameof(Model.ResultsJson))" value="@(Model.ResultsJson)" />

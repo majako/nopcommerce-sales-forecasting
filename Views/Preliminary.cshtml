@@ -29,19 +29,6 @@
     </div>
     <div class="card-body" id="@bodyId">
       <form>
-        @foreach (var discount in discounts)
-        {
-          <div class="form-group row">
-            <div class="col-md-1">
-              <input id="@discount.Id" type="checkbox" checked />
-            </div>
-            <div class="label-wrapper col-md-11">
-              <label class="col-form-label" for="@discount.Id">
-                @discount.Name
-              </label>
-            </div>
-          </div>
-        }
         <div class="form-group row">
           <div class="col-md-12">
             <div class="row">
@@ -61,6 +48,19 @@
             </div>
           </div>
         </div>
+        @foreach (var discount in discounts)
+        {
+          <div class="form-group row">
+            <div class="col-md-1">
+              <input id="@discount.Id" type="checkbox" checked />
+            </div>
+            <div class="label-wrapper col-md-11">
+              <label class="col-form-label" for="@discount.Id">
+                @discount.Name
+              </label>
+            </div>
+          </div>
+        }
         <div class="form-group row">
           <div class="text-center col-12">
             <button type="button" id="@submitButtonId" class="btn btn-primary"
@@ -85,9 +85,11 @@
       $"{{key:{kv.Key},value:[{string.Join(',', kv.Value.Select(d => d.Id))}].filter(v => selectedDiscounts.has(v))}}")))
     ];
 
+    const blanketDiscount = document.getElementById('@blanketDiscountId').value;
+
     const data = {
       discountsByProduct,
-      blanketDiscount: document.getElementById('@blanketDiscountId').value / 100,
+      blanketDiscount: Number.isFinite(blanketDiscount) ? blanketDiscount / 100 : null,
       periodLength: @Model.PeriodLength,
     };
 
