@@ -58,27 +58,23 @@
 
         <div class="card-body">
           <div class="form-group row">
-            <div class="col-12">
-              <div class="row">
-                <div class="col-md-6 text-center">
-                  @using (@Html.BeginForm("NewForecast", "SalesForecasting", FormMethod.Post))
-                  {
-                    <button type="submit" class="btn btn-primary" id="new-forecast">
-                      <i class="fa fa-plus-square"></i>
-                      @T("Majako.Plugin.Misc.SalesForecasting.NewForecast")
-                    </button>
-                  }
-                </div>
-                <div class="col-md-6 text-center">
-                  @using (@Html.BeginForm("ExportCsv", "SalesForecasting", FormMethod.Post))
-                  {
-                    <button type="submit" class="btn bg-olive" id="export-csv">
-                      <i class="fa fa-download"></i>
-                      @T("Majako.Plugin.Misc.SalesForecasting.SaveCsv")
-                    </button>
-                  }
-                </div>
-              </div>
+            <div class="col-md-6 text-center">
+              @using (@Html.BeginForm("NewForecast", "SalesForecasting", FormMethod.Post))
+              {
+                <button type="submit" class="btn btn-primary" id="new-forecast">
+                  <i class="fa fa-plus-square"></i>
+                  @T("Majako.Plugin.Misc.SalesForecasting.NewForecast")
+                </button>
+              }
+            </div>
+            <div class="col-md-6 text-center">
+              @using (@Html.BeginForm("ExportCsv", "SalesForecasting", FormMethod.Post))
+              {
+                <button type="submit" class="btn bg-olive" id="export-csv">
+                  <i class="fa fa-download"></i>
+                  @T("Majako.Plugin.Misc.SalesForecasting.SaveCsv")
+                </button>
+              }
             </div>
           </div>
         </div>
