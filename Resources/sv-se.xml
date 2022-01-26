@@ -58,7 +58,7 @@
         <Value>Allmän rabatt (%)</Value>
     </LocaleResource>
     <LocaleResource Name="Majako.Plugin.Misc.SalesForecasting.BlanketDiscountDescription">
-        <Value>Övriga rabatter ignoreras om allmän rabatt > 0</Value>
+        <Value>Övriga rabatter ignoreras om allmän rabatt är angiven</Value>
     </LocaleResource>
     <LocaleResource Name="Majako.Plugin.Misc.SalesForecasting.ForecastSubmittedHeader">
         <Value>Prognosbegäran skickad</Value>
