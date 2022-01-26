@@ -10,40 +10,36 @@
   NopHtml.SetActiveMenuItemSystemName("Sales.SalesForecasting");
   Layout = "~/Areas/Admin/Views/Shared/_AdminLayout.cshtml";
 
-  var tableModel = new DataTablesModel
-  {
-    Name = "forecast-grid",
-    UrlRead = new DataUrl("GetResultsPage", "SalesForecasting", null),
-    Length = Model.PageSize,
-    LengthMenu = Model.AvailablePageSizes,
-    Filters = new List<FilterParameter>
-{
-new FilterParameter(nameof(Model.ResultsJson))
-},
-    ColumnCollection = new List<ColumnProperty>
-{
-new ColumnProperty(nameof(ForecastResponse.Name))
-{
-Title = T("Majako.Plugin.Misc.SalesForecasting.ProductName").Text
-},
-new ColumnProperty(nameof(ForecastResponse.ProductId))
-{
-Title = T("Majako.Plugin.Misc.SalesForecasting.ProductId").Text,
-Width = "150"
-},
-new ColumnProperty(nameof(ForecastResponse.Sku))
-{
-Title = T("Majako.Plugin.Misc.SalesForecasting.Sku").Text,
-Width = "200"
-},
-new ColumnProperty(nameof(ForecastResponse.Prediction))
-{
-Title = T("Majako.Plugin.Misc.SalesForecasting.Prediction").Text,
-Width = "100",
-ClassName = NopColumnClassDefaults.CenterAll
-}
-}
-  };
+    var tableModel = new DataTablesModel
+    {
+        Name = "forecast-grid",
+        UrlRead = new DataUrl("GetResultsPage", "SalesForecasting", null),
+        Length = Model.PageSize,
+        LengthMenu = Model.AvailablePageSizes,
+        ColumnCollection = new List<ColumnProperty>
+        {
+            new ColumnProperty(nameof(ForecastResponse.Name))
+            {
+                Title = T("Majako.Plugin.Misc.SalesForecasting.ProductName").Text
+            },
+            new ColumnProperty(nameof(ForecastResponse.ProductId))
+            {
+                Title = T("Majako.Plugin.Misc.SalesForecasting.ProductId").Text,
+                Width = "150"
+            },
+            new ColumnProperty(nameof(ForecastResponse.Sku))
+            {
+                Title = T("Majako.Plugin.Misc.SalesForecasting.Sku").Text,
+                Width = "200"
+            },
+            new ColumnProperty(nameof(ForecastResponse.Prediction))
+            {
+                Title = T("Majako.Plugin.Misc.SalesForecasting.Prediction").Text,
+                Width = "100",
+                ClassName = NopColumnClassDefaults.CenterAll
+            }
+        }
+    };
 }
 
 <div class="content-header clearfix">
@@ -90,5 +86,3 @@ ClassName = NopColumnClassDefaults.CenterAll
     </div>
   </div>
 </div>
-
-  <input type="hidden" id="@(nameof(Model.ResultsJson))" value="@(Model.ResultsJson)" />
