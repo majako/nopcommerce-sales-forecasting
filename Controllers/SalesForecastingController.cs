@@ -153,7 +153,6 @@ namespace Majako.Plugin.Misc.SalesForecasting.Controllers
       if (!_permissionService.Authorize(StandardPermissionProvider.ManageOrders))
         return AccessDeniedView();
 
-      var settings = _settingService.LoadSetting<SalesForecastingPluginSettings>();
       var forecast = (await _salesForecastingService.GetForecastAsync().ConfigureAwait(false))?.ToArray() ?? Array.Empty<ForecastResponse>();
       var results = new PagedList<ForecastResponse>(
         forecast,
