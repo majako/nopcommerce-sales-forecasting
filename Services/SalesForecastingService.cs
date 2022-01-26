@@ -157,7 +157,6 @@ namespace Majako.Plugin.Misc.SalesForecasting.Services
         var forecastId = JsonConvert.DeserializeObject<ForecastSubmittedResponse>(await response.Content.ReadAsStringAsync().ConfigureAwait(false)).Id;
         settings.ForecastId = forecastId;
       }
-      settings.SearchModelJson = JsonConvert.SerializeObject(model, _jsonSerializerSettings);
       _settingService.SaveSetting(settings);
       _pollingCancellationTokenSource.Cancel();
       _pollingCancellationTokenSource = new CancellationTokenSource();
@@ -169,6 +168,9 @@ namespace Majako.Plugin.Misc.SalesForecasting.Services
       var products = GetProductsFromSearch(searchModel);
       var (fromUtc, untilUtc) = GetPeriod(searchModel.PeriodLength);
       var discounts = GetDiscounts(products, fromUtc, untilUtc);
+      var settings = _settingService.LoadSetting<SalesForecastingPluginSettings>();
+      settings.SearchModelJson = JsonConvert.SerializeObject(searchModel, _jsonSerializerSettings);
+      _settingService.SaveSetting(settings);
       return new PreliminaryForecastModel
       {
         DiscountsByProduct = discounts,
