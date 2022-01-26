@@ -157,7 +157,7 @@ namespace Majako.Plugin.Misc.SalesForecasting.Controllers
       var forecast = (await _salesForecastingService.GetForecastAsync().ConfigureAwait(false))?.ToArray() ?? Array.Empty<ForecastResponse>();
       var results = new PagedList<ForecastResponse>(
         forecast,
-        model.Page,
+        model.Page - 1,
         model.PageSize);
       return Json(new ForecastListModel().PrepareToGrid(model, results, () => results));
     }
