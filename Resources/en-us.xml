@@ -58,7 +58,7 @@
         <Value>Blanket discount (%)</Value>
     </LocaleResource>
     <LocaleResource Name="Majako.Plugin.Misc.SalesForecasting.BlanketDiscountDescription">
-        <Value>Overrides other discounts if set</Value>
+        <Value>Overrides other discounts if specified</Value>
     </LocaleResource>
     <LocaleResource Name="Majako.Plugin.Misc.SalesForecasting.ForecastSubmittedHeader">
         <Value>Forecast request submitted</Value>
