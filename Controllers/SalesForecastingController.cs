@@ -1,4 +1,5 @@
-﻿using System.Linq;
+﻿using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 using Majako.Plugin.Misc.SalesForecasting.Services;
 using Majako.Plugin.Misc.SalesForecasting.Models;
@@ -12,8 +13,6 @@ using Nop.Web.Framework;
 using Nop.Web.Framework.Controllers;
 using Nop.Web.Framework.Mvc.Filters;
 using Nop.Web.Framework.Models.Extensions;
-using Newtonsoft.Json;
-using Newtonsoft.Json.Serialization;
 using System;
 using System.IO;
 
@@ -26,12 +25,6 @@ namespace Majako.Plugin.Misc.SalesForecasting.Controllers
     private readonly INotificationService _notificationService;
     private readonly SalesForecastingService _salesForecastingService;
     private readonly ILocalizationService _localizationService;
-    private readonly JsonSerializerSettings _jsonSerializerSettings = new JsonSerializerSettings
-    {
-      ContractResolver = new CamelCasePropertyNamesContractResolver(),
-      NullValueHandling = NullValueHandling.Ignore,
-      StringEscapeHandling = StringEscapeHandling.EscapeHtml
-    };
 
     public SalesForecastingController(
         IPermissionService permissionService,
@@ -69,7 +62,7 @@ namespace Majako.Plugin.Misc.SalesForecasting.Controllers
       var settings = _settingService.LoadSetting<SalesForecastingPluginSettings>();
       return string.IsNullOrEmpty(settings.ForecastId)
         ? View("~/Plugins/Misc.SalesForecasting/Views/ForecastSearch.cshtml", new ForecastSearchModel())
-        : await GetForecast();
+        : await GetResults();
     }
 
     [HttpPost]
@@ -133,54 +126,40 @@ namespace Majako.Plugin.Misc.SalesForecasting.Controllers
     [AuthorizeAdmin]
     [AutoValidateAntiforgeryToken]
     [Area(AreaNames.Admin)]
-    public async Task<IActionResult> GetForecast()
+    public async Task<IActionResult> GetResults()
     {
-      if (!_permissionService.Authorize(StandardPermissionProvider.ManageOrders))
-        return AccessDeniedView();
-
-      var settings = _settingService.LoadSetting<SalesForecastingPluginSettings>();
       try
       {
         var forecast = await _salesForecastingService.GetForecastAsync().ConfigureAwait(false);
-        var resultModel = new ForecastResultModel();
         if (forecast == null)
-        {
           _notificationService.WarningNotification(_localizationService.GetResource("Majako.Plugin.Misc.SalesForecasting.ForecastNotReady"));
-        }
-        else
-        {
-          resultModel.ResultsJson = JsonConvert.SerializeObject(forecast, _jsonSerializerSettings);
-        }
-        resultModel.SetGridPageSize();
-        return View("~/Plugins/Misc.SalesForecasting/Views/ForecastResults.cshtml", resultModel);
       }
-      catch (System.Exception)
+      catch (Exception)
       {
-        settings.ForecastId = null;
-        _settingService.SaveSetting(settings);
         _notificationService.ErrorNotification(_localizationService.GetResource("Majako.Plugin.Misc.SalesForecasting.ForecastNotFound"));
-        return await Forecast();
+        return await NewForecast();
       }
+      var resultModel = new ForecastResultModel();
+      resultModel.SetGridPageSize();
+      return View("~/Plugins/Misc.SalesForecasting/Views/ForecastResults.cshtml", resultModel);
     }
 
     [HttpPost]
     [AuthorizeAdmin]
     [AutoValidateAntiforgeryToken]
     [Area(AreaNames.Admin)]
-    public IActionResult GetResultsPage(ForecastResultModel model)
+    public async Task<IActionResult> GetResultsPage(ForecastResultModel model)
     {
       if (!_permissionService.Authorize(StandardPermissionProvider.ManageOrders))
         return AccessDeniedView();
 
-      var results = JsonConvert.DeserializeObject<ForecastResponse[]>(model.ResultsJson);
-      return Json(new ForecastListModel().PrepareToGrid(
-          model,
-          new PagedList<ForecastResponse>(
-              results,
-              model.Page,
-              model.PageSize,
-              results.Length),
-          () => results.Skip((model.Page - 1) * model.PageSize).Take(model.PageSize)));
+      var settings = _settingService.LoadSetting<SalesForecastingPluginSettings>();
+      var forecast = (await _salesForecastingService.GetForecastAsync().ConfigureAwait(false))?.ToArray() ?? Array.Empty<ForecastResponse>();
+      var results = new PagedList<ForecastResponse>(
+        forecast,
+        model.Page,
+        model.PageSize);
+      return Json(new ForecastListModel().PrepareToGrid(model, results, () => results));
     }
 
     [HttpPost]

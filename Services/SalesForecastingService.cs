@@ -131,8 +131,8 @@ namespace Majako.Plugin.Misc.SalesForecasting.Services
       {
         Data = data,
         Period = model.PeriodLength,
-        Discounts = model.BlanketDiscount > 0 && model.BlanketDiscount <= 1
-            ? discountsByProduct.ToDictionary(kv => kv.Key.ToString(), kv => model.BlanketDiscount)
+        Discounts = model.BlanketDiscount.HasValue && model.BlanketDiscount >= 0 && model.BlanketDiscount <= 1
+            ? discountsByProduct.ToDictionary(kv => kv.Key.ToString(), kv => model.BlanketDiscount.Value)
             : GetAppliedDiscounts(discountsByProduct, model.PeriodLength)
       };
       using (var requestMessage = new HttpRequestMessage(HttpMethod.Post, $"{BASE_URL}forecast"))

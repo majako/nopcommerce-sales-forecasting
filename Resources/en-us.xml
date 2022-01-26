@@ -58,7 +58,7 @@
         <Value>Blanket discount (%)</Value>
     </LocaleResource>
     <LocaleResource Name="Majako.Plugin.Misc.SalesForecasting.BlanketDiscountDescription">
-        <Value>Overrides other discounts if > 0</Value>
+        <Value>Overrides other discounts if set</Value>
     </LocaleResource>
     <LocaleResource Name="Majako.Plugin.Misc.SalesForecasting.ForecastSubmittedHeader">
         <Value>Forecast request submitted</Value>
@@ -70,6 +70,6 @@
         <Value>Your forecast is not yet ready. If you have not received a notification, please wait a few minutes before trying again.</Value>
     </LocaleResource>
     <LocaleResource Name="Majako.Plugin.Misc.SalesForecasting.ForecastNotFound">
-        <Value>The requested forecast could not be found. Please try again.</Value>
+        <Value>The requested forecast failed or could not be found. Please try again.</Value>
     </LocaleResource>
 </Language>

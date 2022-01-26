@@ -58,7 +58,7 @@
         <Value>Allmän rabatt (%)</Value>
     </LocaleResource>
     <LocaleResource Name="Majako.Plugin.Misc.SalesForecasting.BlanketDiscountDescription">
-        <Value>Övriga rabatter ignoreras om allmän rabatt > 0</Value>
+        <Value>Övriga rabatter ignoreras om allmän rabatt är satt</Value>
     </LocaleResource>
     <LocaleResource Name="Majako.Plugin.Misc.SalesForecasting.ForecastSubmittedHeader">
         <Value>Prognosbegäran skickad</Value>
@@ -70,6 +70,6 @@
         <Value>Din prognosbegäran har skickats, och du informeras när prognosen är klar. Detta tar vanligen ett par minuter, beroende på antal produkter och ordrar. Om du inte har fått en notis efter flera minuter, gå till huvudsidan för prognoser.</Value>
     </LocaleResource>
     <LocaleResource Name="Majako.Plugin.Misc.SalesForecasting.ForecastNotFound">
-        <Value>Den begärda prognosen kunde inte hittas. Var vänlig försök igen.</Value>
+        <Value>Den begärda prognosen misslyckades eller kunde inte hittas. Var vänlig försök igen.</Value>
     </LocaleResource>
 </Language>

@@ -31,17 +31,6 @@
       <form>
         <div class="row">
           <div class="col-md-5">
-            @foreach (var discount in discounts)
-            {
-              <div class="form-group">
-                <input id="@discount.Id" type="checkbox" checked />
-                <label class="custom-control-label" for="@discount.Id"><strong>@discount.Name</strong></label>
-              </div>
-            }
-          </div>
-        </div>
-        <div class="row">
-          <div class="col-md-5">
             <div class="form-group">
               <input id="@blanketDiscountId" type="number" step="1" max="100" min="0" />
               <label class="custom-control-label" for="@blanketDiscountId">
@@ -51,6 +40,17 @@
                 @T("Majako.Plugin.Misc.SalesForecasting.BlanketDiscountDescription")
               </div>
             </div>
+          </div>
+        </div>
+        <div class="row">
+          <div class="col-md-5">
+            @foreach (var discount in discounts)
+            {
+              <div class="form-group">
+                <input id="@discount.Id" type="checkbox" checked />
+                <label class="custom-control-label" for="@discount.Id"><strong>@discount.Name</strong></label>
+              </div>
+            }
           </div>
         </div>
         <div class="row">
@@ -78,9 +78,11 @@
         $"{{key:{kv.Key},value:[{string.Join(',', kv.Value.Select(d => d.Id))}].filter(v => selectedDiscounts.has(v))}}")))
     ];
 
+    const blanketDiscount = document.getElementById('@blanketDiscountId').value;
+
     const data = {
       discountsByProduct,
-      blanketDiscount: document.getElementById('@blanketDiscountId').value / 100,
+      blanketDiscount: Number.isFinite(blanketDiscount) ? blanketDiscount / 100 : null,
       periodLength: @Model.PeriodLength,
     };
 
