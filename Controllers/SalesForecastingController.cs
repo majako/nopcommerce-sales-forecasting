@@ -1,8 +1,10 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
-using Majako.Plugin.Misc.SalesForecasting.Services;
 using Majako.Plugin.Misc.SalesForecasting.Models;
+using Majako.Plugin.Misc.SalesForecasting.Services;
 using Microsoft.AspNetCore.Mvc;
 using Nop.Core;
 using Nop.Services.Configuration;
@@ -11,10 +13,8 @@ using Nop.Services.Messages;
 using Nop.Services.Security;
 using Nop.Web.Framework;
 using Nop.Web.Framework.Controllers;
-using Nop.Web.Framework.Mvc.Filters;
 using Nop.Web.Framework.Models.Extensions;
-using System;
-using System.IO;
+using Nop.Web.Framework.Mvc.Filters;
 
 namespace Majako.Plugin.Misc.SalesForecasting.Controllers
 {
@@ -187,6 +187,33 @@ namespace Majako.Plugin.Misc.SalesForecasting.Controllers
           streamWriter.WriteLine($"\"{line.Name}\";{line.ProductId};{line.Sku};{line.Prediction}");
       }
       return File(stream.ToArray(), "application/csv", $"sales_forecast_{DateTime.UtcNow.ToShortDateString()}.csv");
+    }
+
+    [HttpPost]
+    [AuthorizeAdmin]
+    [AdminAntiForgery]
+    [Area(AreaNames.Admin)]
+    public IActionResult ExportSalesCsv(ForecastSearchModel searchModel)
+    {
+      if (!_permissionService.Authorize(StandardPermissionProvider.ManageOrders))
+        return AccessDeniedView();
+
+      var sales = _salesForecastingService.GetData(searchModel);
+      var stream = new MemoryStream();
+      var header = string.Join(';', new[]
+      {
+        "ProductId",
+        "Quantity",
+        "Created",
+        "Discount"
+      });
+      using (var streamWriter = new StreamWriter(stream))
+      {
+        streamWriter.WriteLine(header);
+        foreach (var line in sales)
+          streamWriter.WriteLine($"{line.ProductId};{line.Quantity};{line.Created};{line.Discount}");
+      }
+      return File(stream.ToArray(), "application/csv", $"sales_{DateTime.UtcNow.ToShortDateString()}.csv");
     }
   }
 }
