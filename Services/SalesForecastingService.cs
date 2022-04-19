@@ -26,14 +26,6 @@ namespace Majako.Plugin.Misc.SalesForecasting.Services
 {
   public class SalesForecastingService
   {
-    private class Sale
-    {
-      public string ProductId { get; set; }
-      public DateTime Created { get; set; }
-      public int Quantity { get; set; }
-      public decimal Discount { get; set; }
-    }
-
     private class ForecastRequest
     {
       public IDictionary<string, float> Params { get; set; }
@@ -196,6 +188,37 @@ namespace Majako.Plugin.Misc.SalesForecasting.Services
         predictions.TryGetValue(p.Id.ToString(), out var prediction) ? prediction : 0));
     }
 
+    public IEnumerable<Sale> GetData(int[] productIds)
+    {
+      if (productIds.Length == 0)
+        return Enumerable.Empty<Sale>();
+      var query =
+          from productId in productIds
+          join orderItem in _orderItemRepository.Table on productId equals orderItem.ProductId
+          join order in _orderRepository.Table on orderItem.OrderId equals order.Id
+          where order.OrderStatusId != (int)OrderStatus.Cancelled
+          select new
+          {
+            productId,
+            order,  // date cannot be saved directly for some reason
+            quantity = orderItem.Quantity,
+            discount = orderItem.DiscountAmountExclTax,
+            price = orderItem.PriceExclTax
+          };
+      return query.ToArray().Select(r => new Sale
+      {
+        ProductId = r.productId.ToString(),
+        Created = r.order.CreatedOnUtc,
+        Quantity = r.quantity,
+        Discount = r.price > 0 ? r.discount / r.price : 0
+      });
+    }
+
+    public IEnumerable<Sale> GetData(ProductSearchModel productSearchModel)
+    {
+      return GetData(GetProductsFromSearch(productSearchModel).Select(p => p.Id).ToArray());
+    }
+
     private async Task PollForecastAsync(CancellationToken token)
     {
       var settings = _settingService.LoadSetting<SalesForecastingPluginSettings>();
@@ -230,32 +253,6 @@ namespace Majako.Plugin.Misc.SalesForecasting.Services
       using var requestMessage = new HttpRequestMessage(HttpMethod.Get, $"{BASE_URL}forecast/{settings.ForecastId}");
       requestMessage.Headers.Add("subscription-key", settings.ApiKey);
       return await _httpClient.SendAsync(requestMessage).ConfigureAwait(false);
-    }
-
-    private IEnumerable<Sale> GetData(int[] productIds)
-    {
-      if (productIds.Length == 0)
-        return Enumerable.Empty<Sale>();
-      var query =
-          from productId in productIds
-          join orderItem in _orderItemRepository.Table on productId equals orderItem.ProductId
-          join order in _orderRepository.Table on orderItem.OrderId equals order.Id
-          where order.OrderStatusId != (int)OrderStatus.Cancelled
-          select new
-          {
-            productId,
-            order,  // date cannot be saved directly for some reason
-            quantity = orderItem.Quantity,
-            discount = orderItem.DiscountAmountExclTax,
-            price = orderItem.PriceExclTax
-          };
-      return query.ToArray().Select(r => new Sale
-      {
-        ProductId = r.productId.ToString(),
-        Created = r.order.CreatedOnUtc,
-        Quantity = r.quantity,
-        Discount = r.price > 0 ? r.discount / r.price : 0
-      });
     }
 
     private IDictionary<int, Discount[]> GetDiscounts(IEnumerable<Product> products, DateTime fromUtc, DateTime untilUtc)

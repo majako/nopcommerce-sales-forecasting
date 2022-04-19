@@ -1,32 +1,42 @@
 ﻿@using Majako.Plugin.Misc.SalesForecasting.Models
 @model ForecastSearchModel
 
-<form asp-controller="SalesForecasting" asp-action="Forecast" method="post">
-    <div class="form-horizontal">
-        <div class="panel panel-default">
-            <div class="panel-body">
-                @await Html.PartialAsync("ProductSearch.cshtml", Model)
+<div class="form-horizontal">
+  <div class="panel panel-default">
+    <div class="panel-body">
+      @await Html.PartialAsync("ProductSearch.cshtml", Model)
 
-                <div class="panel-body row">
-                    <div class="col-md-5">
-                        <div class="form-group">
-                            <div class="col-md-4">
-                                <nop-label asp-for="PeriodLength" />
-                            </div>
-                            <div class="col-md-8">
-                                <nop-editor asp-for="PeriodLength" />
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                <div class="row">
-                    <div class="col-md-7 col-md-offset-5">
-                        <button type="submit" id="forecast-submit" class="btn btn-primary">
-                            @T("Majako.Plugin.Misc.SalesForecasting.Submit")
-                        </button>
-                    </div>
-                </div>
+      <div class="panel-body row">
+        <div class="col-md-5">
+          <div class="form-group">
+            <div class="col-md-4">
+              <nop-label asp-for="PeriodLength" />
             </div>
+            <div class="col-md-8">
+              <nop-editor asp-for="PeriodLength" />
+            </div>
+          </div>
         </div>
+      </div>
+      <div class="row">
+        <div class="col-md-2 col-md-offset-5">
+          @using (@Html.BeginForm("GetPreliminary", "SalesForecasting", FormMethod.Post))
+          {
+            <button type="submit" id="forecast-submit" class="btn btn-primary">
+              @T("Majako.Plugin.Misc.SalesForecasting.Submit")
+            </button>
+          }
+        </div>
+        <div class="col-md-2 col-md-offset-1">
+          @using (@Html.BeginForm("ExportSalesCsv", "SalesForecasting", FormMethod.Post))
+          {
+            <button type="submit" class="btn bg-olive" id="export-csv">
+              <i class="fa fa-download"></i>
+              @T("Majako.Plugin.Misc.SalesForecasting.SaveCsv")
+            </button>
+          }
+        </div>
+      </div>
     </div>
-</form>
+  </div>
+</div>
