@@ -35,7 +35,13 @@
             new ColumnProperty(nameof(ForecastResponse.Prediction))
             {
                 Title = T("Majako.Plugin.Misc.SalesForecasting.Prediction").Text,
-                Width = "100",
+                Width = "50",
+                ClassName = NopColumnClassDefaults.CenterAll
+            },
+            new ColumnProperty(nameof(ForecastResponse.UpperPrediction))
+            {
+                Title = T("Majako.Plugin.Misc.SalesForecasting.UpperPrediction").Text,
+                Width = "50",
                 ClassName = NopColumnClassDefaults.CenterAll
             }
         }

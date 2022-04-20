@@ -4,23 +4,23 @@ using System.Linq;
 using System.Net;
 using System.Net.Http;
 using System.Net.Http.Headers;
-using Majako.Plugin.Misc.SalesForecasting.Models;
-using Nop.Data;
-using Nop.Core.Http;
-using Nop.Core.Domain.Catalog;
-using Nop.Core.Domain.Orders;
-using Nop.Services.Catalog;
-using Nop.Services.Configuration;
-using Nop.Services.Localization;
-using Nop.Services.Messages;
-using Nop.Web.Areas.Admin.Models.Catalog;
-using System.Threading.Tasks;
 using System.Threading;
+using System.Threading.Tasks;
+using Majako.Plugin.Misc.SalesForecasting.Models;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Serialization;
 using Nop.Core;
-using Nop.Services.Discounts;
+using Nop.Core.Domain.Catalog;
 using Nop.Core.Domain.Discounts;
+using Nop.Core.Domain.Orders;
+using Nop.Core.Http;
+using Nop.Data;
+using Nop.Services.Catalog;
+using Nop.Services.Configuration;
+using Nop.Services.Discounts;
+using Nop.Services.Localization;
+using Nop.Services.Messages;
+using Nop.Web.Areas.Admin.Models.Catalog;
 
 namespace Majako.Plugin.Misc.SalesForecasting.Services
 {
@@ -44,6 +44,8 @@ namespace Majako.Plugin.Misc.SalesForecasting.Services
     {
       public string ProductId { get; set; }
       public int Quantity { get; set; }
+      public float MeanError { get; set; }
+      public float StandardDeviation { get; set; }
     }
 
     private class ForecastData
@@ -181,11 +183,18 @@ namespace Majako.Plugin.Misc.SalesForecasting.Services
       if (response.StatusCode != HttpStatusCode.OK)
         return null;
       var content = JsonConvert.DeserializeObject<RawForecastResponse>(await response.Content.ReadAsStringAsync().ConfigureAwait(false));
-      var predictions = content.Data.Predictions.ToDictionary(p => p.ProductId, p => p.Quantity);
+      var predictions = content.Data.Predictions.ToDictionary(p => p.ProductId);
       var searchModel = JsonConvert.DeserializeObject<ForecastSearchModel>(settings.SearchModelJson);
-      return GetProductsFromSearch(searchModel).Select(p => new ForecastResponse(
-        p,
-        predictions.TryGetValue(p.Id.ToString(), out var prediction) ? prediction : 0));
+      return GetProductsFromSearch(searchModel).Select(p =>
+      {
+        return predictions.TryGetValue(p.Id.ToString(), out var prediction)
+          ? new ForecastResponse(
+              p,
+              prediction.Quantity,
+              prediction.MeanError,
+              prediction.StandardDeviation)
+          : new ForecastResponse(p, 0, 0, 0);
+      });
     }
 
     public IEnumerable<Sale> GetData(int[] productIds)
