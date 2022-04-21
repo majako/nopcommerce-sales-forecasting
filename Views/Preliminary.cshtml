@@ -82,7 +82,7 @@
 
     const data = {
       discountsByProduct,
-      blanketDiscount: Number.isFinite(blanketDiscount) ? blanketDiscount / 100 : null,
+      blanketDiscount: isFinite(blanketDiscount) ? parseFloat(blanketDiscount) / 100 : null,
       periodLength: @Model.PeriodLength,
     };
 
