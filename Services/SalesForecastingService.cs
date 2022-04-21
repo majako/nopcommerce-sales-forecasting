@@ -201,7 +201,8 @@ namespace Majako.Plugin.Misc.SalesForecasting.Services
               p,
               prediction.Quantity,
               prediction.MeanError,
-              prediction.StandardDeviation)
+              prediction.StandardDeviation,
+              settings.Margin)
           : new ForecastResponse(p, 0, 0, 0);
       });
     }
