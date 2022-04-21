@@ -195,13 +195,14 @@ namespace Majako.Plugin.Misc.SalesForecasting.Services
       var searchModel = JsonConvert.DeserializeObject<ForecastSearchModel>(searchModelJson);
 
       return (await GetProductsFromSearch(searchModel))
-        .Select(p => 
+        .Select(p =>
           predictions.TryGetValue(p.Id.ToString(), out var prediction)
             ? new ForecastResponse(
                 p,
                 prediction.Quantity,
                 prediction.MeanError,
-                prediction.StandardDeviation)
+                prediction.StandardDeviation,
+                settings.Margin)
             : new ForecastResponse(p, 0, 0, 0)
           );
     }
