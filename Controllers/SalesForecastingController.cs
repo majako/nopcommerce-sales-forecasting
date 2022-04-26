@@ -1,8 +1,9 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
-using Majako.Plugin.Misc.SalesForecasting.Services;
 using Majako.Plugin.Misc.SalesForecasting.Models;
+using Majako.Plugin.Misc.SalesForecasting.Services;
 using Microsoft.AspNetCore.Mvc;
 using Nop.Core;
 using Nop.Services.Configuration;
@@ -11,14 +12,12 @@ using Nop.Services.Messages;
 using Nop.Services.Security;
 using Nop.Web.Framework;
 using Nop.Web.Framework.Controllers;
-using Nop.Web.Framework.Mvc.Filters;
 using Nop.Web.Framework.Models.Extensions;
-using System;
-using System.IO;
+using Nop.Web.Framework.Mvc.Filters;
 
 namespace Majako.Plugin.Misc.SalesForecasting.Controllers
 {
-  public class SalesForecastingController : BasePluginController
+    public class SalesForecastingController : BasePluginController
   {
     private readonly IPermissionService _permissionService;
     private readonly ISettingService _settingService;
@@ -178,15 +177,43 @@ namespace Majako.Plugin.Misc.SalesForecasting.Controllers
                 "Majako.Plugin.Misc.SalesForecasting.ProductName",
                 "Majako.Plugin.Misc.SalesForecasting.ProductId",
                 "Majako.Plugin.Misc.SalesForecasting.Sku",
-                "Majako.Plugin.Misc.SalesForecasting.Prediction"
+                "Majako.Plugin.Misc.SalesForecasting.Prediction",
+                "Majako.Plugin.Misc.SalesForecasting.UpperPrediction"
             }.Select(_localizationService.GetResource));
       using (var streamWriter = new StreamWriter(stream))
       {
         streamWriter.WriteLine(header);
         foreach (var line in forecast)
-          streamWriter.WriteLine($"\"{line.Name}\";{line.ProductId};{line.Sku};{line.Prediction}");
+          streamWriter.WriteLine($"\"{line.Name}\";{line.ProductId};{line.Sku};{line.Prediction};{line.UpperPrediction}");
       }
       return File(stream.ToArray(), "application/csv", $"sales_forecast_{DateTime.UtcNow.ToShortDateString()}.csv");
+    }
+
+    [HttpPost]
+    [AuthorizeAdmin]
+    [AutoValidateAntiforgeryToken]
+    [Area(AreaNames.Admin)]
+    public IActionResult ExportSalesCsv(ForecastSearchModel searchModel)
+    {
+      if (!_permissionService.Authorize(StandardPermissionProvider.ManageOrders))
+        return AccessDeniedView();
+
+      var sales = _salesForecastingService.GetData(searchModel);
+      var stream = new MemoryStream();
+      var header = string.Join(';', new[]
+      {
+        "ProductId",
+        "Quantity",
+        "Created",
+        "Discount"
+      });
+      using (var streamWriter = new StreamWriter(stream))
+      {
+        streamWriter.WriteLine(header);
+        foreach (var line in sales)
+          streamWriter.WriteLine($"{line.ProductId};{line.Quantity};{line.Created};{line.Discount}");
+      }
+      return File(stream.ToArray(), "application/csv", $"sales_{DateTime.UtcNow.ToShortDateString()}.csv");
     }
   }
 }

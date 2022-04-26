@@ -3,6 +3,9 @@
     <LocaleResource Name="Majako.Plugin.Misc.SalesForecasting.ApiKey">
         <Value>API key</Value>
     </LocaleResource>
+    <LocaleResource Name="Majako.Plugin.Misc.SalesForecasting.Margin">
+        <Value>Margin for upper forecast (in number of standard deviations)</Value>
+    </LocaleResource>
     <LocaleResource Name="Majako.Plugin.Misc.SalesForecasting.SalesForecasting">
         <Value>Sales forecasting</Value>
     </LocaleResource>
@@ -35,6 +38,9 @@
     </LocaleResource>
     <LocaleResource Name="Majako.Plugin.Misc.SalesForecasting.Prediction">
         <Value>Forecast</Value>
+    </LocaleResource>
+    <LocaleResource Name="Majako.Plugin.Misc.SalesForecasting.UpperPrediction">
+        <Value>Upper forecast</Value>
     </LocaleResource>
     <LocaleResource Name="Majako.Plugin.Misc.SalesForecasting.PeriodLength">
         <Value>Period length</Value>

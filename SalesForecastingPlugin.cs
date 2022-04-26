@@ -2,11 +2,8 @@
 using System.Linq;
 using Microsoft.AspNetCore.Routing;
 using Nop.Core;
-using Nop.Core.Domain.Tasks;
 using Nop.Services.Common;
 using Nop.Services.Plugins;
-using Nop.Services.Tasks;
-using NUglify.Helpers;
 using Nop.Web.Framework.Menu;
 using Nop.Services.Configuration;
 using Nop.Services.Localization;
