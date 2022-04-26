@@ -26,5 +26,12 @@ namespace Majako.Plugin.Misc.SalesForecasting.Models
       Prediction = prediction;
       UpperPrediction = (int)MathF.Round(prediction - meanError + a * std);
     }
+
+    public ForecastResponse(string productName, int prediction, float meanError, float std, float a = 1)
+    {
+      ProductId = productName;
+      Prediction = prediction;
+      UpperPrediction = (int)MathF.Round(prediction - meanError + a * std);
+    }
   }
 }
