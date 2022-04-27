@@ -157,7 +157,7 @@ namespace Majako.Plugin.Misc.SalesForecasting.Services
                 return Enumerable.Empty<ForecastResponse>();
             var request = new ForecastRequest
             {
-                Data = data,
+                Data = data.ToArray(),
                 Period = periodLength
             };
             var forecastId = string.Empty;
