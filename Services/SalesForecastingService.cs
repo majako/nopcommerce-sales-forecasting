@@ -50,6 +50,7 @@ namespace Majako.Plugin.Misc.SalesForecasting.Services
       public int Quantity { get; set; }
       public float MeanError { get; set; }
       public float StandardDeviation { get; set; }
+      public int[] Quantiles { get; set; }
     }
 
     private class ForecastData
@@ -196,17 +197,12 @@ namespace Majako.Plugin.Misc.SalesForecasting.Services
       var searchModelJson = Decompress(settings.SearchModelJsonGzip);
       var searchModel = JsonConvert.DeserializeObject<ForecastSearchModel>(searchModelJson);
 
-      return GetProductsFromSearch(searchModel).Select(p =>
-      {
-        return predictions.TryGetValue(p.Id.ToString(), out var prediction)
-          ? new ForecastResponse(
-              p,
-              prediction.Quantity,
-              prediction.MeanError,
-              prediction.StandardDeviation,
-              prediction.Quantiles)
-          : new ForecastResponse(p, 0, 0, null);
-      });
+      return GetProductsFromSearch(searchModel)
+        .Select(p =>
+          predictions.TryGetValue(p.Id.ToString(), out var prediction)
+            ? new ForecastResponse(p, prediction.Quantity, prediction.Quantiles)
+            : new ForecastResponse(p, 0, null)
+          );
     }
 
     public IEnumerable<Sale> GetData(int[] productIds)

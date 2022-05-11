@@ -1,5 +1,4 @@
-using System;
-using System.Linq;
+﻿using Nop.Web.Framework.Models;
 using Nop.Core.Domain.Catalog;
 using Nop.Web.Framework.Models;
 
