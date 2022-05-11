@@ -3,8 +3,8 @@
     <LocaleResource Name="Majako.Plugin.Misc.SalesForecasting.ApiKey">
         <Value>API-nyckel</Value>
     </LocaleResource>
-    <LocaleResource Name="Majako.Plugin.Misc.SalesForecasting.Margin">
-        <Value>Marginal för övre prognos (i antal standardavvikelser)</Value>
+    <LocaleResource Name="Majako.Plugin.Misc.SalesForecasting.Quantile">
+        <Value>Kvantil i procent (0 för att avaktivera)</Value>
     </LocaleResource>
     <LocaleResource Name="Majako.Plugin.Misc.SalesForecasting.SalesForecasting">
         <Value>Försäljningsprognoser</Value>
