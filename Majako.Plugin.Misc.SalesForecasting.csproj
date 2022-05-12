@@ -10,20 +10,20 @@
     <PackageLicenseUrl></PackageLicenseUrl>
     <PackageProjectUrl>http://www.majako.se/</PackageProjectUrl>
     <RepositoryType>Git</RepositoryType>
-    <OutputPath>..\Presentation\Nop.Web\Plugins\Misc.SalesForecasting</OutputPath>
+    <OutputPath>..\..\Presentation\Nop.Web\Plugins\Misc.SalesForecasting</OutputPath>
     <OutDir>$(OutputPath)</OutDir>
     <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
   </PropertyGroup>
 
   <ItemGroup>
-    <ClearPluginAssemblies Include="$(MSBuildProjectDirectory)\..\Build\ClearPluginAssemblies.proj" />
+    <ClearPluginAssemblies Include="$(MSBuildProjectDirectory)\..\..\Build\ClearPluginAssemblies.proj" />
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\Libraries\Nop.Core\Nop.Core.csproj" />
-    <ProjectReference Include="..\Presentation\Nop.Web\Nop.Web.csproj" />
-    <ProjectReference Include="..\Libraries\Nop.Services\Nop.Services.csproj" />
-    <ProjectReference Include="..\Presentation\Nop.Web.Framework\Nop.Web.Framework.csproj" />
+    <ProjectReference Include="..\..\Libraries\Nop.Core\Nop.Core.csproj" />
+    <ProjectReference Include="..\..\Presentation\Nop.Web\Nop.Web.csproj" />
+    <ProjectReference Include="..\..\Libraries\Nop.Services\Nop.Services.csproj" />
+    <ProjectReference Include="..\..\Presentation\Nop.Web.Framework\Nop.Web.Framework.csproj" />
   </ItemGroup>
 
   <ItemGroup>
