@@ -180,13 +180,13 @@ namespace Majako.Plugin.Misc.SalesForecasting.Controllers
           "Majako.Plugin.Misc.SalesForecasting.ProductId",
           "Majako.Plugin.Misc.SalesForecasting.Sku",
           "Majako.Plugin.Misc.SalesForecasting.Prediction",
-          "Majako.Plugin.Misc.SalesForecasting.UpperPrediction"
+          "Majako.Plugin.Misc.SalesForecasting.QuantilePrediction"
         }.Select(async resource => await _localizationService.GetResourceAsync(resource))));
       using (var streamWriter = new StreamWriter(stream))
       {
         await streamWriter.WriteLineAsync(header);
         foreach (var line in forecast)
-          await streamWriter.WriteLineAsync($"\"{line.Name}\";{line.ProductId};{line.Sku};{line.Prediction};{line.UpperPrediction}");
+          await streamWriter.WriteLineAsync($"\"{line.Name}\";{line.ProductId};{line.Sku};{line.Prediction};{line.QuantilePrediction}");
       }
       return File(stream.ToArray(), "application/csv", $"sales_forecast_{DateTime.UtcNow.ToShortDateString()}.csv");
     }
