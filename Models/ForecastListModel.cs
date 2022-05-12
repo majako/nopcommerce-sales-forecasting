@@ -1,6 +1,5 @@
 ﻿using Nop.Web.Framework.Models;
 using Nop.Core.Domain.Catalog;
-using Nop.Web.Framework.Models;
 
 namespace Majako.Plugin.Misc.SalesForecasting.Models
 {
