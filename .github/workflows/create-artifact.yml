@@ -21,7 +21,6 @@ jobs:
       - name: '[4.2] Clone Misc.SalesForecasting'
         uses: actions/checkout@v2
         with:
-          token: '${{ secrets.BUILD_READ_PAT }}'
           repository: majako/nopcommerce-sales-forecasting
           ref: '4.2'
           path: ${{ github.workspace }}/nopCommerce/src/Plugins/Misc.SalesForecasting
@@ -52,7 +51,6 @@ jobs:
       - name: '[4.3] Clone Misc.SalesForecasting'
         uses: actions/checkout@v2
         with:
-          token: '${{ secrets.BUILD_READ_PAT }}'
           repository: majako/nopcommerce-sales-forecasting
           ref: '4.3'
           path: ${{ github.workspace }}/nopCommerce/src/Plugins/Misc.SalesForecasting
@@ -83,7 +81,6 @@ jobs:
       - name: '[4.4] Clone Misc.SalesForecasting'
         uses: actions/checkout@v2
         with:
-          token: '${{ secrets.BUILD_READ_PAT }}'
           repository: majako/nopcommerce-sales-forecasting
           ref: '4.4'
           path: ${{ github.workspace }}/nopCommerce/src/Plugins/Misc.SalesForecasting
@@ -117,7 +114,6 @@ jobs:
       - name: '[4.5] Clone Misc.SalesForecasting'
         uses: actions/checkout@v2
         with:
-          token: '${{ secrets.BUILD_READ_PAT }}'
           repository: majako/nopcommerce-sales-forecasting
           ref: '4.5'
           path: ${{ github.workspace }}/nopCommerce/src/Plugins/Misc.SalesForecasting
