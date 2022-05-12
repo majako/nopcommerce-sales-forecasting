@@ -1,6 +1,4 @@
-using System;
-using System.Linq;
-using Nop.Core.Domain.Catalog;
+﻿using Nop.Core.Domain.Catalog;
 using Nop.Web.Framework.Models;
 
 namespace Majako.Plugin.Misc.SalesForecasting.Models
