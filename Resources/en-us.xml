@@ -36,6 +36,9 @@
     <LocaleResource Name="Majako.Plugin.Misc.SalesForecasting.Prediction">
         <Value>Forecast</Value>
     </LocaleResource>
+    <LocaleResource Name="Majako.Plugin.Misc.SalesForecasting.UpperPrediction">
+        <Value>Upper forecast</Value>
+    </LocaleResource>
     <LocaleResource Name="Majako.Plugin.Misc.SalesForecasting.PeriodLength">
         <Value>Period length</Value>
     </LocaleResource>

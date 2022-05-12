@@ -2,11 +2,12 @@
 @using Nop.Services.Common
 @using Nop.Core
 @using Nop.Web.Areas.Admin.Factories
+@using Majako.Plugin.Misc.SalesForecasting.Models
 
 @inject IGenericAttributeService genericAttributeService
 @inject IWorkContext workContext
 
-@model ProductSearchModel
+@model ForecastSearchModel
 
 @{
   const string hideSearchBlockAttributeName = "ProductListPage.HideSearchBlock";

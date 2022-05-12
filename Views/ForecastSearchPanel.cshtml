@@ -21,9 +21,15 @@
             </div>
           </div>
           <div class="row">
-            <div class="text-center col-12">
+            <div class="text-center col-6">
               <button type="submit" id="forecast-submit" class="btn btn-primary">
                 @T("Majako.Plugin.Misc.SalesForecasting.Submit")
+              </button>
+            </div>
+            <div class="text-center col-6">
+              <button type="submit" class="btn bg-olive" formaction="@Url.Action("ExportSalesCsv")" formmethod="post">
+                <i class="fa fa-download"></i>
+                @T("Majako.Plugin.Misc.SalesForecasting.SaveCsv")
               </button>
             </div>
           </div>

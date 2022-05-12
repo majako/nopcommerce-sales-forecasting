@@ -9,6 +9,6 @@ namespace Majako.Plugin.Misc.SalesForecasting
         public string ApiKey { get; set; }
 
         public string ForecastId { get; set; }
-        public string SearchModelJson { get; set; }
+        public string SearchModelJsonGzip { get; set; }
     }
 }
