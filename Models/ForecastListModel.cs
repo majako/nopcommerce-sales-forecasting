@@ -13,7 +13,7 @@ namespace Majako.Plugin.Misc.SalesForecasting.Models
     public string Name { get; set; }
     public string Sku { get; set; }
     public int Prediction { get; set; }
-    public int UpperPrediction { get; set; }
+    public int QuantilePrediction { get; set; }
 
     public ForecastResponse() { }
 
@@ -23,7 +23,7 @@ namespace Majako.Plugin.Misc.SalesForecasting.Models
       Name = product.Name;
       Sku = product.Sku;
       Prediction = prediction;
-      UpperPrediction = quantiles?.Length == 1 ? quantiles[0] : prediction;
+      QuantilePrediction = quantiles?.Length == 1 ? quantiles[0] : prediction;
     }
   }
 }

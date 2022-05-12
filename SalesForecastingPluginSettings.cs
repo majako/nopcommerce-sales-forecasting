@@ -16,7 +16,7 @@ namespace Majako.Plugin.Misc.SalesForecasting
 
         public SalesForecastingPluginSettings()
         {
-            Quantile = 1;
+            Quantile = 80;
         }
     }
 }

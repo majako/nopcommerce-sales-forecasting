@@ -130,7 +130,9 @@ namespace Majako.Plugin.Misc.SalesForecasting.Services
       {
         Data = data,
         Period = model.PeriodLength,
-        Quantiles = settings.Quantile > 0 ? new [] { settings.Quantile / 100f } : Array.Empty<float>(),
+        Quantiles = settings.Quantile > 0 && settings.Quantile <= 100
+          ? new [] { settings.Quantile / 100f }
+          : Array.Empty<float>(),
         Discounts = model.BlanketDiscount.HasValue
             ? discountsByProduct.ToDictionary(kv => kv.Key.ToString(), kv => model.BlanketDiscount.Value)
             : await GetAppliedDiscounts(discountsByProduct, model.PeriodLength)
