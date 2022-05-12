@@ -24,7 +24,7 @@ jobs:
           token: '${{ secrets.BUILD_READ_PAT }}'
           repository: majako/nopcommerce-sales-forecasting
           ref: '4.2'
-          path: ${{ github.workspace }}/nopCommerce/src/Misc.SalesForecasting
+          path: ${{ github.workspace }}/nopCommerce/src/Plugins/Misc.SalesForecasting
           
       - name: '[4.2] Install dotnet'
         uses: actions/setup-dotnet@v1.8.1
@@ -32,7 +32,7 @@ jobs:
           dotnet-version: 2.2.x
             
       - name: '[4.2] Build plugin'
-        run: dotnet build ${{ github.workspace }}/nopCommerce/src/Misc.SalesForecasting/Majako.Plugin.Misc.SalesForecasting.csproj -c Release
+        run: dotnet build ${{ github.workspace }}/nopCommerce/src/Plugins/Misc.SalesForecasting/Majako.Plugin.Misc.SalesForecasting.csproj -c Release
         
       - name: '[4.2] Copy plugin to artifact'
         run: mkdir -p ${{ github.workspace }}/artifact/Majako.SalesForecasting/v4.2 && cp -r ${{ github.workspace }}/nopCommerce/src/Presentation/Nop.Web/Plugins/Misc.SalesForecasting ${{ github.workspace }}/artifact/Majako.SalesForecasting/v4.2/Misc.SalesForecasting
@@ -55,7 +55,7 @@ jobs:
           token: '${{ secrets.BUILD_READ_PAT }}'
           repository: majako/nopcommerce-sales-forecasting
           ref: '4.3'
-          path: ${{ github.workspace }}/nopCommerce/src/Misc.SalesForecasting
+          path: ${{ github.workspace }}/nopCommerce/src/Plugins/Misc.SalesForecasting
           
       - name: '[4.3] Install dotnet'
         uses: actions/setup-dotnet@v1.8.1
@@ -63,7 +63,7 @@ jobs:
           dotnet-version: 3.1.x
             
       - name: '[4.3] Build plugin'
-        run: dotnet build ${{ github.workspace }}/nopCommerce/src/Misc.SalesForecasting/Majako.Plugin.Misc.SalesForecasting.csproj -c Release
+        run: dotnet build ${{ github.workspace }}/nopCommerce/src/Plugins/Misc.SalesForecasting/Majako.Plugin.Misc.SalesForecasting.csproj -c Release
         
       - name: '[4.3] Copy plugin to artifact'
         run: mkdir -p ${{ github.workspace }}/artifact/Majako.SalesForecasting/v4.3 && cp -r ${{ github.workspace }}/nopCommerce/src/Presentation/Nop.Web/Plugins/Misc.SalesForecasting ${{ github.workspace }}/artifact/Majako.SalesForecasting/v4.3/Misc.SalesForecasting
@@ -86,7 +86,7 @@ jobs:
           token: '${{ secrets.BUILD_READ_PAT }}'
           repository: majako/nopcommerce-sales-forecasting
           ref: '4.4'
-          path: ${{ github.workspace }}/nopCommerce/src/Misc.SalesForecasting
+          path: ${{ github.workspace }}/nopCommerce/src/Plugins/Misc.SalesForecasting
           
       - name: '[4.4] Install dotnet'
         uses: actions/setup-dotnet@v1.8.1
@@ -94,7 +94,7 @@ jobs:
           dotnet-version: 5.0.x
             
       - name: '[4.4] Build plugin'
-        run: dotnet build ${{ github.workspace }}/nopCommerce/src/Misc.SalesForecasting/Majako.Plugin.Misc.SalesForecasting.csproj -c Release
+        run: dotnet build ${{ github.workspace }}/nopCommerce/src/Plugins/Misc.SalesForecasting/Majako.Plugin.Misc.SalesForecasting.csproj -c Release
       
       - name: '[4.4] Remove runtimes folder'
         run: rm -rf ${{ github.workspace }}/nopCommerce/src/Presentation/Nop.Web/Plugins/Misc.SalesForecasting/runtimes
@@ -120,7 +120,7 @@ jobs:
           token: '${{ secrets.BUILD_READ_PAT }}'
           repository: majako/nopcommerce-sales-forecasting
           ref: '4.5'
-          path: ${{ github.workspace }}/nopCommerce/src/Misc.SalesForecasting
+          path: ${{ github.workspace }}/nopCommerce/src/Plugins/Misc.SalesForecasting
           
       - name: '[4.5] Install dotnet'
         uses: actions/setup-dotnet@v1.8.1
@@ -128,7 +128,7 @@ jobs:
           dotnet-version: 6.0.x
             
       - name: '[4.5] Build plugin'
-        run: dotnet build ${{ github.workspace }}/nopCommerce/src/Misc.SalesForecasting/Majako.Plugin.Misc.SalesForecasting.csproj -c Release
+        run: dotnet build ${{ github.workspace }}/nopCommerce/src/Plugins/Misc.SalesForecasting/Majako.Plugin.Misc.SalesForecasting.csproj -c Release
       
       - name: '[4.5] Remove runtimes folder'
         run: rm -rf ${{ github.workspace }}/nopCommerce/src/Presentation/Nop.Web/Plugins/Misc.SalesForecasting/runtimes
