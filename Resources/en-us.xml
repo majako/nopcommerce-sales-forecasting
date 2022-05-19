@@ -3,8 +3,8 @@
     <LocaleResource Name="Majako.Plugin.Misc.SalesForecasting.ApiKey">
         <Value>API key</Value>
     </LocaleResource>
-    <LocaleResource Name="Majako.Plugin.Misc.SalesForecasting.Margin">
-        <Value>Margin for upper forecast (in number of standard deviations)</Value>
+    <LocaleResource Name="Majako.Plugin.Misc.SalesForecasting.Quantile">
+        <Value>Quantile in percent (0 to deactive)</Value>
     </LocaleResource>
     <LocaleResource Name="Majako.Plugin.Misc.SalesForecasting.SalesForecasting">
         <Value>Sales forecasting</Value>
@@ -39,8 +39,8 @@
     <LocaleResource Name="Majako.Plugin.Misc.SalesForecasting.Prediction">
         <Value>Forecast</Value>
     </LocaleResource>
-    <LocaleResource Name="Majako.Plugin.Misc.SalesForecasting.UpperPrediction">
-        <Value>Upper forecast</Value>
+    <LocaleResource Name="Majako.Plugin.Misc.SalesForecasting.QuantilePrediction">
+        <Value>Quantile value</Value>
     </LocaleResource>
     <LocaleResource Name="Majako.Plugin.Misc.SalesForecasting.PeriodLength">
         <Value>Period length</Value>

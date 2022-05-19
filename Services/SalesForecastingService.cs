@@ -32,16 +32,17 @@ namespace Majako.Plugin.Misc.SalesForecasting.Services
     {
         private class ForecastRequest
         {
-            public IDictionary<string, float> Params { get; set; }
-            public int? Period { get; set; }
-            public float? MinWeight { get; set; }
-            public IEnumerable<Sale> Data { get; set; }
-            public IDictionary<string, float> Discounts { get; set; }
+          public IDictionary<string, float> Params { get; set; }
+          public int? Period { get; set; }
+          public float? MinWeight { get; set; }
+          public float[] Quantiles { get; set; }
+          public IEnumerable<Sale> Data { get; set; }
+          public IDictionary<string, float> Discounts { get; set; }
         }
 
         private class RawForecastResponse
         {
-            public ForecastData Data { get; set; }
+          public ForecastData Data { get; set; }
         }
 
         private class Prediction
@@ -50,6 +51,7 @@ namespace Majako.Plugin.Misc.SalesForecasting.Services
             public int Quantity { get; set; }
             public float MeanError { get; set; }
             public float StandardDeviation { get; set; }
+            public int[] Quantiles { get; set; }
         }
 
         private class ForecastData
@@ -117,6 +119,9 @@ namespace Majako.Plugin.Misc.SalesForecasting.Services
             {
                 Data = data,
                 Period = model.PeriodLength,
+                Quantiles = settings.Quantile > 0 && settings.Quantile <= 100
+                  ? new [] { settings.Quantile / 100f }
+                  : Array.Empty<float>(),
                 Discounts = model.BlanketDiscount.HasValue
                   ? discountsByProduct.ToDictionary(kv => kv.Key.ToString(), kv => model.BlanketDiscount.Value)
                   : GetAppliedDiscounts(discountsByProduct, model.PeriodLength)
@@ -158,6 +163,9 @@ namespace Majako.Plugin.Misc.SalesForecasting.Services
             var request = new ForecastRequest
             {
                 Data = data.ToArray(),
+                Quantiles = settings.Quantile > 0 && settings.Quantile < 100
+                  ? new [] { settings.Quantile / 100f }
+                  : Array.Empty<float>(),
                 Period = periodLength
             };
             var forecastId = string.Empty;
@@ -223,35 +231,31 @@ namespace Majako.Plugin.Misc.SalesForecasting.Services
             var searchModel = JsonConvert.DeserializeObject<ForecastSearchModel>(searchModelJson);
 
             return GetProductsFromSearch(searchModel).Select(p =>
-            {
-                return predictions.TryGetValue(p.Id.ToString(), out var prediction)
-            ? new ForecastResponse(
-                p,
-                prediction.Quantity,
-                prediction.MeanError,
-                prediction.StandardDeviation)
-            : new ForecastResponse(p, 0, 0, 0);
-            });
+              predictions.TryGetValue(p.Id.ToString(), out var prediction)
+                ? new ForecastResponse(p, prediction.Quantity, prediction.Quantiles)
+                : new ForecastResponse(p, 0, null)
+            );
         }
 
         public async Task<IEnumerable<ForecastResponse>> GetForecastAsync(string forecastId, IEnumerable<string> productNames)
         {
-            var settings = _settingService.LoadSetting<SalesForecastingPluginSettings>();
-            settings.ForecastId = forecastId;
+          var settings = _settingService.LoadSetting<SalesForecastingPluginSettings>();
+          settings.ForecastId = forecastId;
+          if (string.IsNullOrEmpty(forecastId))
+            throw new Exception("No forecast found");
 
-            var response = await GetForecastResponseAsync(settings);
-            response.EnsureSuccessStatusCode();
-            if (response.StatusCode != HttpStatusCode.OK)
-                return null;
-            var content = JsonConvert.DeserializeObject<RawForecastResponse>(await response.Content.ReadAsStringAsync().ConfigureAwait(false));
-            var predictions = content.Data.Predictions.ToDictionary(p => p.ProductId);
+          var response = await GetForecastResponseAsync(settings);
+          response.EnsureSuccessStatusCode();
+          if (response.StatusCode != HttpStatusCode.OK)
+            return null;
+          var content = JsonConvert.DeserializeObject<RawForecastResponse>(await response.Content.ReadAsStringAsync().ConfigureAwait(false));
+          var predictions = content.Data.Predictions.ToDictionary(p => p.ProductId);
 
-            return productNames.Select(p =>
-            {
-                return predictions.TryGetValue(p, out var prediction)
-                  ? new ForecastResponse(p, prediction.Quantity, prediction.MeanError, prediction.StandardDeviation)
-                  : new ForecastResponse(p, 0, 0, 0);
-            });
+          return productNames.Select(p =>
+            predictions.TryGetValue(p, out var prediction)
+              ? new ForecastResponse(p, prediction.Quantity, prediction.Quantiles)
+              : new ForecastResponse(p, 0, null)
+          );
         }
 
         private IEnumerable<Sale> GetData(IEnumerable<Product> products)

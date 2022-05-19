@@ -10,7 +10,7 @@
     <PackageLicenseUrl></PackageLicenseUrl>
     <PackageProjectUrl>http://www.majako.se/</PackageProjectUrl>
     <RepositoryType>Git</RepositoryType>
-    <OutputPath>..\Presentation\Nop.Web\Plugins\Misc.SalesForecasting</OutputPath>
+    <OutputPath>..\..\Presentation\Nop.Web\Plugins\Misc.SalesForecasting</OutputPath>
     <OutDir>$(OutputPath)</OutDir>
     <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
   </PropertyGroup>

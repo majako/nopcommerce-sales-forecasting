@@ -8,15 +8,15 @@ namespace Majako.Plugin.Misc.SalesForecasting
         [NopResourceDisplayName("Majako.Plugin.Misc.SalesForecasting.ApiKey")]
         public string ApiKey { get; set; }
 
-        [NopResourceDisplayName("Majako.Plugin.Misc.SalesForecasting.Margin")]
-        public float Margin { get; set; }
+        [NopResourceDisplayName("Majako.Plugin.Misc.SalesForecasting.Quantile")]
+        public int Quantile { get; set; }
 
         public string ForecastId { get; set; }
         public string SearchModelJsonGzip { get; set; }
 
         public SalesForecastingPluginSettings()
         {
-            Margin = 1;
+            Quantile = 80;
         }
     }
 }

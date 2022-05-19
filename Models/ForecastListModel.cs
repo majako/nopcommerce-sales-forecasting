@@ -1,5 +1,4 @@
-using System;
-using Nop.Core.Domain.Catalog;
+﻿using Nop.Core.Domain.Catalog;
 using Nop.Web.Framework.Models;
 
 namespace Majako.Plugin.Misc.SalesForecasting.Models
@@ -14,24 +13,24 @@ namespace Majako.Plugin.Misc.SalesForecasting.Models
     public string Name { get; set; }
     public string Sku { get; set; }
     public int Prediction { get; set; }
-    public int UpperPrediction { get; set; }
+    public int QuantilePrediction { get; set; }
 
     public ForecastResponse() { }
 
-    public ForecastResponse(Product product, int prediction, float meanError, float std, float a = 1)
+    public ForecastResponse(Product product, int prediction, int[] quantiles)
     {
       ProductId = product.Id.ToString();
       Name = product.Name;
       Sku = product.Sku;
       Prediction = prediction;
-      UpperPrediction = (int)MathF.Round(prediction - meanError + a * std);
+      QuantilePrediction = quantiles?.Length == 1 ? quantiles[0] : prediction;
     }
 
-    public ForecastResponse(string productName, int prediction, float meanError, float std, float a = 1)
+    public ForecastResponse(string productName, int prediction, int[] quantiles)
     {
       ProductId = productName;
       Prediction = prediction;
-      UpperPrediction = (int)MathF.Round(prediction - meanError + a * std);
+      QuantilePrediction = quantiles?.Length == 1 ? quantiles[0] : prediction;
     }
   }
 }
