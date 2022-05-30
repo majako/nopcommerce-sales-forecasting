@@ -34,6 +34,7 @@ namespace Majako.Plugin.Misc.SalesForecasting.Services
       public IDictionary<string, float> Params { get; set; }
       public int? Period { get; set; }
       public float? MinWeight { get; set; }
+      public float[] Quantiles { get; set; }
       public IEnumerable<Sale> Data { get; set; }
       public IDictionary<string, float> Discounts { get; set; }
     }
@@ -49,6 +50,7 @@ namespace Majako.Plugin.Misc.SalesForecasting.Services
       public int Quantity { get; set; }
       public float MeanError { get; set; }
       public float StandardDeviation { get; set; }
+      public int[] Quantiles { get; set; }
     }
 
     private class ForecastData
@@ -128,6 +130,9 @@ namespace Majako.Plugin.Misc.SalesForecasting.Services
       {
         Data = data,
         Period = model.PeriodLength,
+        Quantiles = settings.Quantile > 0 && settings.Quantile <= 100
+          ? new [] { settings.Quantile / 100f }
+          : Array.Empty<float>(),
         Discounts = model.BlanketDiscount.HasValue
             ? discountsByProduct.ToDictionary(kv => kv.Key.ToString(), kv => model.BlanketDiscount.Value)
             : GetAppliedDiscounts(discountsByProduct, model.PeriodLength)
@@ -194,17 +199,12 @@ namespace Majako.Plugin.Misc.SalesForecasting.Services
       var searchModelJson = Decompress(settings.SearchModelJsonGzip);
       var searchModel = JsonConvert.DeserializeObject<ForecastSearchModel>(searchModelJson);
 
-      return GetProductsFromSearch(searchModel).Select(p =>
-      {
-        return predictions.TryGetValue(p.Id.ToString(), out var prediction)
-          ? new ForecastResponse(
-              p,
-              prediction.Quantity,
-              prediction.MeanError,
-              prediction.StandardDeviation,
-              settings.Margin)
-          : new ForecastResponse(p, 0, 0, 0);
-      });
+      return GetProductsFromSearch(searchModel)
+        .Select(p =>
+          predictions.TryGetValue(p.Id.ToString(), out var prediction)
+            ? new ForecastResponse(p, prediction.Quantity, prediction.Quantiles)
+            : new ForecastResponse(p, 0, null)
+          );
     }
 
     public IEnumerable<Sale> GetData(int[] productIds)
