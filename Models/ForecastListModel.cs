@@ -25,5 +25,12 @@ namespace Majako.Plugin.Misc.SalesForecasting.Models
       Prediction = prediction;
       QuantilePrediction = quantiles?.Length == 1 ? quantiles[0] : prediction;
     }
+
+    public ForecastResponse(string productName, int prediction, int[] quantiles)
+    {
+      ProductId = productName;
+      Prediction = prediction;
+      QuantilePrediction = quantiles?.Length == 1 ? quantiles[0] : prediction;
+    }
   }
 }

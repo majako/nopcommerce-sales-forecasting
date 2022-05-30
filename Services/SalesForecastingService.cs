@@ -10,6 +10,7 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Majako.Plugin.Misc.SalesForecasting.Models;
+using Majako.Services.Extensions;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Serialization;
 using Nop.Core;
@@ -72,6 +73,7 @@ namespace Majako.Plugin.Misc.SalesForecasting.Services
     private readonly ILocalizationService _localizationService;
     private readonly IDiscountService _discountService;
     private readonly IManufacturerService _manufacturerService;
+    private readonly IProductAttributeService _productAttributeService;
     private readonly IWebHelper _webHelper;
     private readonly IRepository<Order> _orderRepository;
     private readonly IRepository<OrderItem> _orderItemRepository;
@@ -99,6 +101,7 @@ namespace Majako.Plugin.Misc.SalesForecasting.Services
         ILocalizationService localizationService,
         IDiscountService discountService,
         IManufacturerService manufacturerService,
+        IProductAttributeService productAttributeService,
         IHttpClientFactory httpClientFactory,
         IWebHelper webHelper
     )
@@ -112,6 +115,7 @@ namespace Majako.Plugin.Misc.SalesForecasting.Services
       _localizationService = localizationService;
       _discountService = discountService;
       _manufacturerService = manufacturerService;
+      _productAttributeService = productAttributeService;
       _webHelper = webHelper;
       _orderItemRepository = orderItemRepository;
       _discountProductMappingRepository = discountProductMappingRepository;
@@ -165,6 +169,48 @@ namespace Majako.Plugin.Misc.SalesForecasting.Services
       _ = PollForecastAsync(_pollingCancellationTokenSource.Token);
     }
 
+    public async Task<IEnumerable<ForecastResponse>> SubmitAndGetForecastAsync(int periodLength, IEnumerable<Product> products)
+    {
+      var settings = _settingService.LoadSetting<SalesForecastingPluginSettings>();
+      var data = GetData(products);
+      if (!data.Any())
+        return Enumerable.Empty<ForecastResponse>();
+      var request = new ForecastRequest
+      {
+        Data = data.ToArray(),
+        Quantiles = settings.Quantile > 0 && settings.Quantile < 100
+          ? new [] { settings.Quantile / 100f }
+          : Array.Empty<float>(),
+        Period = periodLength
+      };
+      var forecastId = string.Empty;
+      using (var requestMessage = new HttpRequestMessage(HttpMethod.Post, $"{BASE_URL}forecast"))
+      {
+        var requestContent = new StringContent(JsonConvert.SerializeObject(request, _jsonSerializerSettings));
+        requestContent.Headers.ContentType = MediaTypeHeaderValue.Parse("application/json");
+        requestMessage.Content = requestContent;
+        requestMessage.Headers.Add("subscription-key", settings.ApiKey);
+        var response = await _httpClient.SendAsync(requestMessage).ConfigureAwait(false);
+        try
+        {
+          response.EnsureSuccessStatusCode();
+        }
+        catch
+        {
+          var messageKey = response.StatusCode == HttpStatusCode.Unauthorized
+            ? "Majako.Plugin.Misc.SalesForecasting.InvalidSubscriptionKey"
+            : "Majako.Plugin.Misc.SalesForecasting.ForecastFailed";
+          _notificationService.ErrorNotification(_localizationService.GetResource(messageKey), encode: false);
+          throw;
+        }
+        forecastId = JsonConvert.DeserializeObject<ForecastSubmittedResponse>(await response.Content.ReadAsStringAsync().ConfigureAwait(false)).Id;
+      }
+      _pollingCancellationTokenSource.Cancel();
+      _pollingCancellationTokenSource = new CancellationTokenSource();
+      await PollForecastAsync(_pollingCancellationTokenSource.Token, forecastId);
+      return await GetForecastAsync(forecastId, request.Data.Select(r => r.ProductId));
+    }
+
     public PreliminaryForecastModel GetPreliminaryData(ForecastSearchModel searchModel)
     {
       var products = GetProductsFromSearch(searchModel);
@@ -207,6 +253,27 @@ namespace Majako.Plugin.Misc.SalesForecasting.Services
           );
     }
 
+    public async Task<IEnumerable<ForecastResponse>> GetForecastAsync(string forecastId, IEnumerable<string> productNames)
+    {
+      var settings = _settingService.LoadSetting<SalesForecastingPluginSettings>();
+      settings.ForecastId = forecastId;
+      if (string.IsNullOrEmpty(forecastId))
+        throw new Exception("No forecast found");
+
+      var response = await GetForecastResponseAsync(settings);
+      response.EnsureSuccessStatusCode();
+      if (response.StatusCode != HttpStatusCode.OK)
+        return null;
+      var content = JsonConvert.DeserializeObject<RawForecastResponse>(await response.Content.ReadAsStringAsync().ConfigureAwait(false));
+      var predictions = content.Data.Predictions.ToDictionary(p => p.ProductId);
+
+      return productNames.Select(p =>
+        predictions.TryGetValue(p, out var prediction)
+          ? new ForecastResponse(p, prediction.Quantity, prediction.Quantiles)
+          : new ForecastResponse(p, 0, null)
+      );
+    }
+
     public IEnumerable<Sale> GetData(int[] productIds)
     {
       if (productIds.Length == 0)
@@ -230,6 +297,41 @@ namespace Majako.Plugin.Misc.SalesForecasting.Services
         Created = r.order.CreatedOnUtc,
         Quantity = r.quantity,
         Discount = r.price > 0 ? r.discount / r.price : 0
+      });
+    }
+
+    private IEnumerable<Sale> GetData(IEnumerable<Product> products)
+    {
+      var productsById = products.ToDictionary(p => p.Id);
+      var productIds = productsById.Keys.ToArray();
+      if (productIds.Length == 0)
+        return Enumerable.Empty<Sale>();
+      var query =
+        from productId in productIds
+        join orderItem in _orderItemRepository.Table on productId equals orderItem.ProductId
+        join order in _orderRepository.Table on orderItem.OrderId equals order.Id
+        where order.OrderStatusId != (int)OrderStatus.Cancelled
+        select new
+        {
+          productId = productId,
+          attributes = orderItem.AttributesXml,
+          order = order,  // date cannot be saved directly for some reason
+          quantity = orderItem.Quantity,
+          discount = orderItem.DiscountAmountExclTax,
+          price = orderItem.PriceExclTax
+        };
+      return query.ToArray().Select(r =>
+      {
+        var compositeId = r.productId.ToString();
+        if (!productsById[r.productId].HasDyeColorAttribute(_productAttributeService))
+          compositeId += $" {r.attributes}";
+        return new Sale
+        {
+          ProductId = compositeId,
+          Created = r.order.CreatedOnUtc,
+          Quantity = r.quantity,
+          Discount = r.price > 0 ? r.discount / r.price : 0
+        };
       });
     }
 
@@ -287,6 +389,20 @@ namespace Majako.Plugin.Misc.SalesForecasting.Services
           _notificationService.ErrorNotification(_localizationService.GetResource("Majako.Plugin.Misc.SalesForecasting.ForecastFailed"));
           break;
         }
+        await Task.Delay(5000, token);
+      }
+    }
+
+    private async Task PollForecastAsync(CancellationToken token, string forecastId)
+    {
+      var settings = _settingService.LoadSetting<SalesForecastingPluginSettings>();
+      settings.ForecastId = forecastId;
+      while (!token.IsCancellationRequested)
+      {
+        var response = await GetForecastResponseAsync(settings);
+        response.EnsureSuccessStatusCode();
+        if (response.StatusCode == HttpStatusCode.OK)
+          break;
         await Task.Delay(5000, token);
       }
     }
