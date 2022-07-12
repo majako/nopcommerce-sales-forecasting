@@ -27,448 +27,448 @@ using Nop.Web.Areas.Admin.Models.Catalog;
 
 namespace Majako.Plugin.Misc.SalesForecasting.Services
 {
-  public class SalesForecastingService
-  {
-    private class ForecastRequest
+    public class SalesForecastingService
     {
-      public IDictionary<string, float> Params { get; set; }
-      public int? Period { get; set; }
-      public float? MinWeight { get; set; }
-      public float[] Quantiles { get; set; }
-      public IEnumerable<Sale> Data { get; set; }
-      public IDictionary<string, float> Discounts { get; set; }
-    }
-
-    private class RawForecastResponse
-    {
-      public ForecastData Data { get; set; }
-    }
-
-    private class Prediction
-    {
-      public string ProductId { get; set; }
-      public int Quantity { get; set; }
-      public float MeanError { get; set; }
-      public float StandardDeviation { get; set; }
-      public int[] Quantiles { get; set; }
-    }
-
-    private class ForecastData
-    {
-      public IList<Prediction> Predictions { get; set; }
-    }
-
-    private class ForecastSubmittedResponse
-    {
-      public string Id { get; set; }
-    }
-
-    private const string BASE_URL = "https://api.majako.net/sales-forecast/v1/";
-    private readonly HttpClient _httpClient;
-    private readonly ISettingService _settingService;
-    private readonly IProductService _productService;
-    private readonly ICategoryService _categoryService;
-    private readonly INotificationService _notificationService;
-    private readonly ILocalizationService _localizationService;
-    private readonly IDiscountService _discountService;
-    private readonly IManufacturerService _manufacturerService;
-    private readonly IWebHelper _webHelper;
-    private readonly IRepository<Order> _orderRepository;
-    private readonly IRepository<OrderItem> _orderItemRepository;
-    private readonly IRepository<DiscountProductMapping> _discountProductMappingRepository;
-    private readonly IRepository<DiscountCategoryMapping> _discountCategoryMappingRepository;
-    private readonly IRepository<DiscountManufacturerMapping> _discountManufacturerMappingRepository;
-    private readonly JsonSerializerSettings _jsonSerializerSettings = new()
-    {
-      ContractResolver = new CamelCasePropertyNamesContractResolver(),
-      NullValueHandling = NullValueHandling.Ignore,
-      StringEscapeHandling = StringEscapeHandling.EscapeHtml
-    };
-    private CancellationTokenSource _pollingCancellationTokenSource = new();
-
-    public SalesForecastingService(
-        IRepository<Order> orderRepository,
-        IRepository<OrderItem> orderItemRepository,
-        IRepository<DiscountProductMapping> discountProductMappingRepository,
-        IRepository<DiscountCategoryMapping> discountCategoryMappingRepository,
-        IRepository<DiscountManufacturerMapping> discountManufacturerMappingRepository,
-        ISettingService settingService,
-        IProductService productService,
-        INotificationService notificationService,
-        ICategoryService categoryService,
-        ILocalizationService localizationService,
-        IDiscountService discountService,
-        IManufacturerService manufacturerService,
-        IHttpClientFactory httpClientFactory,
-        IWebHelper webHelper
-    )
-    {
-      _httpClient = httpClientFactory.CreateClient(NopHttpDefaults.DefaultHttpClient);
-      _orderRepository = orderRepository;
-      _settingService = settingService;
-      _notificationService = notificationService;
-      _productService = productService;
-      _categoryService = categoryService;
-      _localizationService = localizationService;
-      _discountService = discountService;
-      _manufacturerService = manufacturerService;
-      _webHelper = webHelper;
-      _orderItemRepository = orderItemRepository;
-      _discountProductMappingRepository = discountProductMappingRepository;
-      _discountCategoryMappingRepository = discountCategoryMappingRepository;
-      _discountManufacturerMappingRepository = discountManufacturerMappingRepository;
-    }
-
-    public async Task SubmitForecastAsync(ForecastSubmissionModel model)
-    {
-      var settings = await _settingService.LoadSettingAsync<SalesForecastingPluginSettings>();
-      var discountsByProduct = new Dictionary<int, int[]>(model.DiscountsByProduct);
-      var data = GetData(discountsByProduct.Keys.ToArray());
-      if (!data.Any())
-        return;
-      var request = new ForecastRequest
-      {
-        Data = data,
-        Period = model.PeriodLength,
-        Quantiles = settings.Quantile > 0 && settings.Quantile <= 100
-          ? new [] { settings.Quantile / 100f }
-          : Array.Empty<float>(),
-        Discounts = model.BlanketDiscount.HasValue
-            ? discountsByProduct.ToDictionary(kv => kv.Key.ToString(), kv => model.BlanketDiscount.Value)
-            : await GetAppliedDiscounts(discountsByProduct, model.PeriodLength)
-      };
-      using (var requestMessage = new HttpRequestMessage(HttpMethod.Post, $"{BASE_URL}forecast"))
-      {
-        var requestContent = new StringContent(JsonConvert.SerializeObject(request, _jsonSerializerSettings));
-        requestContent.Headers.ContentType = MediaTypeHeaderValue.Parse("application/json");
-        requestMessage.Content = requestContent;
-        requestMessage.Headers.Add("subscription-key", settings.ApiKey);
-        var response = await _httpClient.SendAsync(requestMessage).ConfigureAwait(false);
-        try
+        private class ForecastRequest
         {
-          response.EnsureSuccessStatusCode();
+            public IDictionary<string, float> Params { get; set; }
+            public int? Period { get; set; }
+            public float? MinWeight { get; set; }
+            public float[] Quantiles { get; set; }
+            public IEnumerable<Sale> Data { get; set; }
+            public IDictionary<string, float> Discounts { get; set; }
         }
-        catch
+
+        private class RawForecastResponse
         {
-          var messageKey = response.StatusCode == HttpStatusCode.Unauthorized
-            ? "Majako.Plugin.Misc.SalesForecasting.InvalidSubscriptionKey"
-            : "Majako.Plugin.Misc.SalesForecasting.ForecastFailed";
-          _notificationService.ErrorNotification(await _localizationService.GetResourceAsync(messageKey), encode: false);
-          throw;
+            public ForecastData Data { get; set; }
         }
-        var forecastId = JsonConvert.DeserializeObject<ForecastSubmittedResponse>(await response.Content.ReadAsStringAsync().ConfigureAwait(false)).Id;
-        settings.ForecastId = forecastId;
-      }
-      await _settingService.SaveSettingAsync(settings);
-      _pollingCancellationTokenSource.Cancel();
-      _pollingCancellationTokenSource = new CancellationTokenSource();
-      _ = PollForecastAsync(_pollingCancellationTokenSource.Token);
-    }
 
-    public async Task<PreliminaryForecastModel> GetPreliminaryData(ForecastSearchModel searchModel)
-    {
-      var products = await GetProductsFromSearch(searchModel);
-      var (fromUtc, untilUtc) = GetPeriod(searchModel.PeriodLength);
-      var discounts = await GetDiscounts(products, fromUtc, untilUtc);
-      var settings = await _settingService.LoadSettingAsync<SalesForecastingPluginSettings>();
-      var searchModelJson = JsonConvert.SerializeObject(searchModel, _jsonSerializerSettings);
-
-      settings.SearchModelJsonGzip = await CompressAsync(searchModelJson);
-      await _settingService.SaveSettingAsync(settings);
-
-      return new PreliminaryForecastModel
-      {
-        DiscountsByProduct = discounts,
-        PeriodLength = searchModel.PeriodLength
-      };
-    }
-
-    public async Task<IEnumerable<ForecastResponse>> GetForecastAsync()
-    {
-      var settings = await _settingService.LoadSettingAsync<SalesForecastingPluginSettings>();
-      if (string.IsNullOrEmpty(settings.ForecastId))
-        throw new Exception("No forecast found");
-
-      var response = await GetForecastResponseAsync(settings);
-      response.EnsureSuccessStatusCode();
-      if (response.StatusCode != HttpStatusCode.OK)
-        return null;
-      var content = JsonConvert.DeserializeObject<RawForecastResponse>(await response.Content.ReadAsStringAsync().ConfigureAwait(false));
-      var predictions = content.Data.Predictions.ToDictionary(p => p.ProductId);
-
-      var searchModelJson = await DecompressAsync(settings.SearchModelJsonGzip);
-      var searchModel = JsonConvert.DeserializeObject<ForecastSearchModel>(searchModelJson);
-
-      return (await GetProductsFromSearch(searchModel))
-        .Select(p =>
-          predictions.TryGetValue(p.Id.ToString(), out var prediction)
-            ? new ForecastResponse(p, prediction.Quantity, prediction.Quantiles)
-            : new ForecastResponse(p, 0, null)
-          );
-    }
-
-    public IEnumerable<Sale> GetData(int[] productIds)
-    {
-      if (productIds.Length == 0)
-        return Enumerable.Empty<Sale>();
-      var query =
-          from productId in productIds
-          join orderItem in _orderItemRepository.Table on productId equals orderItem.ProductId
-          join order in _orderRepository.Table on orderItem.OrderId equals order.Id
-          where order.OrderStatusId != (int)OrderStatus.Cancelled
-          select new
-          {
-            productId,
-            order,  // date cannot be saved directly for some reason
-            quantity = orderItem.Quantity,
-            discount = orderItem.DiscountAmountExclTax,
-            price = orderItem.PriceExclTax
-          };
-      return query.ToArray().Select(r => new Sale
-      {
-        ProductId = r.productId.ToString(),
-        Created = r.order.CreatedOnUtc,
-        Quantity = r.quantity,
-        Discount = r.price > 0 ? r.discount / r.price : 0
-      });
-    }
-
-    public async Task<IEnumerable<Sale>> GetDataAsync(ProductSearchModel productSearchModel)
-    {
-      return GetData(
-        (await GetProductsFromSearch(productSearchModel))
-        .Select(p => p.Id).ToArray());
-    }
-
-    private static async Task<string> CompressAsync(string s)
-    {
-      var bytes = Encoding.Unicode.GetBytes(s);
-      await using var input = new MemoryStream(bytes);
-      await using var output = new MemoryStream();
-      await using (var stream = new GZipStream(output, CompressionLevel.Optimal))
-      {
-        await input.CopyToAsync(stream);
-      }
-      return Convert.ToBase64String(output.ToArray());
-    }
-
-    private static async Task<string> DecompressAsync(string s)
-    {
-      var bytes = Convert.FromBase64String(s);
-      await using var input = new MemoryStream(bytes);
-      await using var output = new MemoryStream();
-      await using (var stream = new GZipStream(input, CompressionMode.Decompress))
-      {
-        await stream.CopyToAsync(output);
-      }
-      return Encoding.Unicode.GetString(output.ToArray());
-    }
-
-    private async Task PollForecastAsync(CancellationToken token)
-    {
-      var settings = await _settingService.LoadSettingAsync<SalesForecastingPluginSettings>();
-      while (!token.IsCancellationRequested)
-      {
-        try
+        private class Prediction
         {
-          var response = await GetForecastResponseAsync(settings);
-          response.EnsureSuccessStatusCode();
-          if (response.StatusCode == HttpStatusCode.OK)
-          {
-            var url = $"{_webHelper.GetStoreLocation()}{SalesForecastingPlugin.BASE_ROUTE}/{SalesForecastingPlugin.FORECAST}";
-            _notificationService.SuccessNotification(
-              await _localizationService.GetResourceAsync("Majako.Plugin.Misc.SalesForecasting.ForecastReady") +
-                $" <a href=\"{url}\">{await _localizationService.GetResourceAsync("Majako.Plugin.Misc.SalesForecasting.ForecastLinkText")}</a>",
-              encode: false
-            );
-            break;
-          }
+            public string ProductId { get; set; }
+            public int Quantity { get; set; }
+            public float MeanError { get; set; }
+            public float StandardDeviation { get; set; }
+            public int[] Quantiles { get; set; }
         }
-        catch
+
+        private class ForecastData
         {
-          _notificationService.ErrorNotification(await _localizationService.GetResourceAsync("Majako.Plugin.Misc.SalesForecasting.ForecastFailed"));
-          break;
+            public IList<Prediction> Predictions { get; set; }
         }
-        await Task.Delay(5000, token);
-      }
-    }
 
-    private async Task<HttpResponseMessage> GetForecastResponseAsync(SalesForecastingPluginSettings settings)
-    {
-      using var requestMessage = new HttpRequestMessage(HttpMethod.Get, $"{BASE_URL}forecast/{settings.ForecastId}");
-      requestMessage.Headers.Add("subscription-key", settings.ApiKey);
-      return await _httpClient.SendAsync(requestMessage).ConfigureAwait(false);
-    }
-
-    private async Task<IDictionary<int, Discount[]>> GetDiscounts(IEnumerable<Product> products, DateTime fromUtc, DateTime untilUtc)
-    {
-      var discountTask = _discountService.GetAllDiscountsAsync(showHidden: true);
-
-      var discountsByProduct = products.ToDictionary(
-        p => p.Id,
-        _ => (IList<Discount>)new List<Discount>()
-      );
-
-      var discountsById = (await discountTask)
-        .Where(d => !d.StartDateUtc.HasValue || d.StartDateUtc <= untilUtc)
-        .Where(d => !d.EndDateUtc.HasValue || d.EndDateUtc >= fromUtc)
-        .ToDictionary(d => d.Id);
-
-      void add(int productId, int discountId)
-      {
-        if (discountsById.TryGetValue(discountId, out var discount))
-          discountsByProduct.GetValueOrDefault(productId)?.Add(discount);
-      }
-      int[] getDiscountIdsByType(DiscountType discountType) =>
-        discountsById.Values
-        .Where(d => d.DiscountType == discountType)
-        .Select(d => d.Id)
-        .ToArray();
-
-      // SQL server has a max limit of elements in an IN query, so we need to filter locally
-      var discountedProductIds = products
-        .Where(p => p.HasDiscountsApplied)
-        .Select(p => p.Id)
-        .ToHashSet();
-      var discountProductMappings =
-        from discountId in getDiscountIdsByType(DiscountType.AssignedToSkus)
-        join dpm in _discountProductMappingRepository.Table
-          on discountId equals dpm.DiscountId
-        select new { pid = dpm.EntityId, discountId };
-
-      foreach (var dpm in discountProductMappings.ToArray().Where(x => discountedProductIds.Contains(x.pid)))
-        add(dpm.pid, dpm.discountId);
-
-      var discountManufacturerMappings =
-        (from discountId in getDiscountIdsByType(DiscountType.AssignedToManufacturers)
-         join dmm in _discountManufacturerMappingRepository.Table
-           on discountId equals dmm.DiscountId
-         select new { mid = dmm.EntityId, discountId })
-        .ToArray();
-      var productManufacturers = await Task.WhenAll(discountManufacturerMappings.Select(
-        dmm => _manufacturerService.GetProductManufacturersByManufacturerIdAsync(dmm.mid, showHidden: true)));
-      var productDiscountPairs = productManufacturers
-        .Zip(discountManufacturerMappings)
-        .SelectMany(z => z.First.Select(pm => (pm.ProductId, z.Second.discountId)));
-      foreach (var (ProductId, discount) in productDiscountPairs)
-        add(ProductId, discount);
-
-      var discountCategoryMappings =
-        (from discountId in getDiscountIdsByType(DiscountType.AssignedToCategories)
-         join dcm in _discountCategoryMappingRepository.Table
-          on discountId equals dcm.DiscountId
-         select new { cid = dcm.EntityId, discountId })
-        .ToArray();
-      var subCategories = await Task.WhenAll(discountCategoryMappings
-        .Where(dcm => discountsById.TryGetValue(dcm.discountId, out var discount) && discount.AppliedToSubCategories)
-        .Select(dcm => _categoryService.GetAllCategoriesByParentCategoryIdAsync(dcm.cid, showHidden: true)));
-      var applicableCategoryDiscountPairs = discountCategoryMappings
-        .Concat(subCategories
-          .Zip(discountCategoryMappings)
-          .SelectMany(z => z.First.Select(c => new { cid = c.Id, z.Second.discountId })));
-      var productCategoryDiscountMapping = await Task.WhenAll(applicableCategoryDiscountPairs.Select(
-        async cd => new
+        private class ForecastSubmittedResponse
         {
-          productCategories = await _categoryService.GetProductCategoriesByCategoryIdAsync(cd.cid, showHidden: true),
-          cd.discountId
-        }));
-      productDiscountPairs = productCategoryDiscountMapping.SelectMany(x => x.productCategories.Select(pc => (pc.ProductId, x.discountId)));
-      foreach (var (ProductId, discount) in productDiscountPairs)
-        add(ProductId, discount);
+            public string Id { get; set; }
+        }
 
-      var orderDiscounts = discountsById.Values
-        .Where(d => d.DiscountType == DiscountType.AssignedToOrderTotal || d.DiscountType == DiscountType.AssignedToOrderSubTotal)
-        .ToArray();
-
-      return discountsByProduct.ToDictionary(
-        kv => kv.Key,
-        kv => kv.Value.Concat(orderDiscounts).ToArray()
-      );
-    }
-
-    private async Task<IDictionary<string, float>> GetAppliedDiscounts(IDictionary<int, int[]> discountsByProduct, int periodLength)
-    {
-      var productsById = new Dictionary<int, Product>(discountsByProduct.Count);
-      var batchSize = 1000;
-      for (var offset = 0; offset < discountsByProduct.Count; offset += batchSize)
-      {
-        var batch = discountsByProduct.Keys.Skip(offset).Take(batchSize).ToArray();
-        foreach (var product in await _productService.GetProductsByIdsAsync(batch))
-          productsById.Add(product.Id, product);
-      }
-      var discountsById = (await _discountService
-        .GetAllDiscountsAsync(showHidden: true))
-        .ToDictionary(d => d.Id);
-      var (fromUtc, untilUtc) = GetPeriod(periodLength);
-      float coverage(Discount discount)
-      {
-        var startDiff = discount.StartDateUtc.HasValue
-          ? Math.Max((discount.StartDateUtc.Value - fromUtc).TotalDays, 0)
-          : 0;
-        var endDiff = discount.EndDateUtc.HasValue
-          ? Math.Max((untilUtc - discount.EndDateUtc.Value).TotalDays, 0)
-          : 0;
-        return 1 - (float)(startDiff + endDiff) / periodLength;
-      }
-      return discountsByProduct
-        .Select(kv =>
+        private const string BASE_URL = "https://api.majako.net/sales-forecast/v1/";
+        private readonly HttpClient _httpClient;
+        private readonly ISettingService _settingService;
+        private readonly IProductService _productService;
+        private readonly ICategoryService _categoryService;
+        private readonly INotificationService _notificationService;
+        private readonly ILocalizationService _localizationService;
+        private readonly IDiscountService _discountService;
+        private readonly IManufacturerService _manufacturerService;
+        private readonly IWebHelper _webHelper;
+        private readonly IRepository<Order> _orderRepository;
+        private readonly IRepository<OrderItem> _orderItemRepository;
+        private readonly IRepository<DiscountProductMapping> _discountProductMappingRepository;
+        private readonly IRepository<DiscountCategoryMapping> _discountCategoryMappingRepository;
+        private readonly IRepository<DiscountManufacturerMapping> _discountManufacturerMappingRepository;
+        private readonly JsonSerializerSettings _jsonSerializerSettings = new()
         {
-          var price = productsById.GetValueOrDefault(kv.Key)?.Price ?? 0;
-          if (price == 0)
-            return (pid: kv.Key, discount: 0m);
-          var appliedDiscounts = _discountService.GetPreferredDiscount(
-                  kv.Value.Select(discountsById.GetValueOrDefault).ToList(),
-                  price,
-                  out var discountAmount
+            ContractResolver = new CamelCasePropertyNamesContractResolver(),
+            NullValueHandling = NullValueHandling.Ignore,
+            StringEscapeHandling = StringEscapeHandling.EscapeHtml
+        };
+        private CancellationTokenSource _pollingCancellationTokenSource = new();
+
+        public SalesForecastingService(
+            IRepository<Order> orderRepository,
+            IRepository<OrderItem> orderItemRepository,
+            IRepository<DiscountProductMapping> discountProductMappingRepository,
+            IRepository<DiscountCategoryMapping> discountCategoryMappingRepository,
+            IRepository<DiscountManufacturerMapping> discountManufacturerMappingRepository,
+            ISettingService settingService,
+            IProductService productService,
+            INotificationService notificationService,
+            ICategoryService categoryService,
+            ILocalizationService localizationService,
+            IDiscountService discountService,
+            IManufacturerService manufacturerService,
+            IHttpClientFactory httpClientFactory,
+            IWebHelper webHelper
+        )
+        {
+            _httpClient = httpClientFactory.CreateClient(NopHttpDefaults.DefaultHttpClient);
+            _orderRepository = orderRepository;
+            _settingService = settingService;
+            _notificationService = notificationService;
+            _productService = productService;
+            _categoryService = categoryService;
+            _localizationService = localizationService;
+            _discountService = discountService;
+            _manufacturerService = manufacturerService;
+            _webHelper = webHelper;
+            _orderItemRepository = orderItemRepository;
+            _discountProductMappingRepository = discountProductMappingRepository;
+            _discountCategoryMappingRepository = discountCategoryMappingRepository;
+            _discountManufacturerMappingRepository = discountManufacturerMappingRepository;
+        }
+
+        public async Task SubmitForecastAsync(ForecastSubmissionModel model)
+        {
+            var settings = await _settingService.LoadSettingAsync<SalesForecastingPluginSettings>();
+            var discountsByProduct = new Dictionary<int, int[]>(model.DiscountsByProduct);
+            var data = GetData(discountsByProduct.Keys.ToArray());
+            if (!data.Any())
+                return;
+            var request = new ForecastRequest
+            {
+                Data = data,
+                Period = model.PeriodLength,
+                Quantiles = settings.Quantile > 0 && settings.Quantile <= 100
+                ? new[] { settings.Quantile / 100f }
+                : Array.Empty<float>(),
+                Discounts = model.BlanketDiscount.HasValue
+                  ? discountsByProduct.ToDictionary(kv => kv.Key.ToString(), kv => model.BlanketDiscount.Value)
+                  : await GetAppliedDiscounts(discountsByProduct, model.PeriodLength)
+            };
+            using (var requestMessage = new HttpRequestMessage(HttpMethod.Post, $"{BASE_URL}forecast"))
+            {
+                var requestContent = new StringContent(JsonConvert.SerializeObject(request, _jsonSerializerSettings));
+                requestContent.Headers.ContentType = MediaTypeHeaderValue.Parse("application/json");
+                requestMessage.Content = requestContent;
+                requestMessage.Headers.Add("subscription-key", settings.ApiKey);
+                var response = await _httpClient.SendAsync(requestMessage).ConfigureAwait(false);
+                try
+                {
+                    response.EnsureSuccessStatusCode();
+                }
+                catch
+                {
+                    var messageKey = response.StatusCode == HttpStatusCode.Unauthorized
+                      ? "Majako.Plugin.Misc.SalesForecasting.InvalidSubscriptionKey"
+                      : "Majako.Plugin.Misc.SalesForecasting.ForecastFailed";
+                    _notificationService.ErrorNotification(await _localizationService.GetResourceAsync(messageKey), encode: false);
+                    throw;
+                }
+                var forecastId = JsonConvert.DeserializeObject<ForecastSubmittedResponse>(await response.Content.ReadAsStringAsync().ConfigureAwait(false)).Id;
+                settings.ForecastId = forecastId;
+            }
+            await _settingService.SaveSettingAsync(settings);
+            _pollingCancellationTokenSource.Cancel();
+            _pollingCancellationTokenSource = new CancellationTokenSource();
+            _ = PollForecastAsync(_pollingCancellationTokenSource.Token);
+        }
+
+        public async Task<PreliminaryForecastModel> GetPreliminaryData(ForecastSearchModel searchModel)
+        {
+            var products = await GetProductsFromSearch(searchModel);
+            var (fromUtc, untilUtc) = GetPeriod(searchModel.PeriodLength);
+            var discounts = await GetDiscounts(products, fromUtc, untilUtc);
+            var settings = await _settingService.LoadSettingAsync<SalesForecastingPluginSettings>();
+            var searchModelJson = JsonConvert.SerializeObject(searchModel, _jsonSerializerSettings);
+
+            settings.SearchModelJsonGzip = await CompressAsync(searchModelJson);
+            await _settingService.SaveSettingAsync(settings);
+
+            return new PreliminaryForecastModel
+            {
+                DiscountsByProduct = discounts,
+                PeriodLength = searchModel.PeriodLength
+            };
+        }
+
+        public async Task<IEnumerable<ForecastResponse>> GetForecastAsync()
+        {
+            var settings = await _settingService.LoadSettingAsync<SalesForecastingPluginSettings>();
+            if (string.IsNullOrEmpty(settings.ForecastId))
+                throw new Exception("No forecast found");
+
+            var response = await GetForecastResponseAsync(settings);
+            response.EnsureSuccessStatusCode();
+            if (response.StatusCode != HttpStatusCode.OK)
+                return null;
+            var content = JsonConvert.DeserializeObject<RawForecastResponse>(await response.Content.ReadAsStringAsync().ConfigureAwait(false));
+            var predictions = content.Data.Predictions.ToDictionary(p => p.ProductId);
+
+            var searchModelJson = await DecompressAsync(settings.SearchModelJsonGzip);
+            var searchModel = JsonConvert.DeserializeObject<ForecastSearchModel>(searchModelJson);
+
+            return (await GetProductsFromSearch(searchModel))
+              .Select(p =>
+                predictions.TryGetValue(p.Id.ToString(), out var prediction)
+                  ? new ForecastResponse(p, prediction.Quantity, prediction.Quantiles)
+                  : new ForecastResponse(p, 0, null)
                 );
-          var avgCoverage = appliedDiscounts.Count > 0 ? (decimal)appliedDiscounts.Select(coverage).Average() : 0;
-          return (pid: kv.Key, discount: avgCoverage * discountAmount / price);
-        })
-        .Where(t => t.discount != 0)
-        .ToDictionary(
-          t => t.pid.ToString(),
-          t => (float)t.discount
-        );
-    }
-
-    private async Task<IList<Product>> GetProductsFromSearch(ProductSearchModel productSearchModel)
-    {
-      var categoryIds = new List<int>();
-      if (productSearchModel.SearchCategoryId > 0)
-      {
-        categoryIds.Add(productSearchModel.SearchCategoryId);
-
-        if (productSearchModel.SearchIncludeSubCategories)
-        {
-          var childCategoryIds = await _categoryService.GetChildCategoryIdsAsync(parentCategoryId: productSearchModel.SearchCategoryId, showHidden: false);
-          categoryIds.AddRange(childCategoryIds);
         }
-      }
 
-      bool? overridePublished = null;
-      if (productSearchModel.SearchPublishedId > 0)
-      {
-        if (productSearchModel.SearchPublishedId == 1)
-          overridePublished = true;
-        else if (productSearchModel.SearchPublishedId == 2)
-          overridePublished = false;
-      }
+        public IEnumerable<Sale> GetData(int[] productIds)
+        {
+            if (productIds.Length == 0)
+                return Enumerable.Empty<Sale>();
+            var query =
+                from productId in productIds
+                join orderItem in _orderItemRepository.Table on productId equals orderItem.ProductId
+                join order in _orderRepository.Table on orderItem.OrderId equals order.Id
+                where order.OrderStatusId != (int)OrderStatus.Cancelled
+                select new
+                {
+                    productId,
+                    order,  // date cannot be saved directly for some reason
+              quantity = orderItem.Quantity,
+                    discount = orderItem.DiscountAmountExclTax,
+                    price = orderItem.PriceExclTax
+                };
+            return query.ToArray().Select(r => new Sale
+            {
+                ProductId = r.productId.ToString(),
+                Created = r.order.CreatedOnUtc,
+                Quantity = r.quantity,
+                Discount = r.price > 0 ? r.discount / r.price : 0
+            });
+        }
 
-      return await _productService.SearchProductsAsync(
-          showHidden: true,
-          categoryIds: categoryIds,
-          manufacturerIds: new List<int> { productSearchModel.SearchManufacturerId },
-          storeId: productSearchModel.SearchStoreId,
-          productType: productSearchModel.SearchProductTypeId > 0 ? (ProductType?)productSearchModel.SearchProductTypeId : null,
-          keywords: productSearchModel.SearchProductName,
-          pageIndex: 0, pageSize: int.MaxValue,
-          overridePublished: overridePublished);
+        public async Task<IEnumerable<Sale>> GetDataAsync(ProductSearchModel productSearchModel)
+        {
+            return GetData(
+              (await GetProductsFromSearch(productSearchModel))
+              .Select(p => p.Id).ToArray());
+        }
+
+        private static async Task<string> CompressAsync(string s)
+        {
+            var bytes = Encoding.Unicode.GetBytes(s);
+            await using var input = new MemoryStream(bytes);
+            await using var output = new MemoryStream();
+            await using (var stream = new GZipStream(output, CompressionLevel.Optimal))
+            {
+                await input.CopyToAsync(stream);
+            }
+            return Convert.ToBase64String(output.ToArray());
+        }
+
+        private static async Task<string> DecompressAsync(string s)
+        {
+            var bytes = Convert.FromBase64String(s);
+            await using var input = new MemoryStream(bytes);
+            await using var output = new MemoryStream();
+            await using (var stream = new GZipStream(input, CompressionMode.Decompress))
+            {
+                await stream.CopyToAsync(output);
+            }
+            return Encoding.Unicode.GetString(output.ToArray());
+        }
+
+        private async Task PollForecastAsync(CancellationToken token)
+        {
+            var settings = await _settingService.LoadSettingAsync<SalesForecastingPluginSettings>();
+            while (!token.IsCancellationRequested)
+            {
+                try
+                {
+                    var response = await GetForecastResponseAsync(settings);
+                    response.EnsureSuccessStatusCode();
+                    if (response.StatusCode == HttpStatusCode.OK)
+                    {
+                        var url = $"{_webHelper.GetStoreLocation()}{SalesForecastingPlugin.BASE_ROUTE}/{SalesForecastingPlugin.FORECAST}";
+                        _notificationService.SuccessNotification(
+                          await _localizationService.GetResourceAsync("Majako.Plugin.Misc.SalesForecasting.ForecastReady") +
+                            $" <a href=\"{url}\">{await _localizationService.GetResourceAsync("Majako.Plugin.Misc.SalesForecasting.ForecastLinkText")}</a>",
+                          encode: false
+                        );
+                        break;
+                    }
+                }
+                catch
+                {
+                    _notificationService.ErrorNotification(await _localizationService.GetResourceAsync("Majako.Plugin.Misc.SalesForecasting.ForecastFailed"));
+                    break;
+                }
+                await Task.Delay(5000, token);
+            }
+        }
+
+        private async Task<HttpResponseMessage> GetForecastResponseAsync(SalesForecastingPluginSettings settings)
+        {
+            using var requestMessage = new HttpRequestMessage(HttpMethod.Get, $"{BASE_URL}forecast/{settings.ForecastId}");
+            requestMessage.Headers.Add("subscription-key", settings.ApiKey);
+            return await _httpClient.SendAsync(requestMessage).ConfigureAwait(false);
+        }
+
+        private async Task<IDictionary<int, Discount[]>> GetDiscounts(IEnumerable<Product> products, DateTime fromUtc, DateTime untilUtc)
+        {
+            var discountTask = _discountService.GetAllDiscountsAsync(showHidden: true);
+
+            var discountsByProduct = products.ToDictionary(
+              p => p.Id,
+              _ => (IList<Discount>)new List<Discount>()
+            );
+
+            var discountsById = (await discountTask)
+              .Where(d => !d.StartDateUtc.HasValue || d.StartDateUtc <= untilUtc)
+              .Where(d => !d.EndDateUtc.HasValue || d.EndDateUtc >= fromUtc)
+              .ToDictionary(d => d.Id);
+
+            void add(int productId, int discountId)
+            {
+                if (discountsById.TryGetValue(discountId, out var discount))
+                    discountsByProduct.GetValueOrDefault(productId)?.Add(discount);
+            }
+            int[] getDiscountIdsByType(DiscountType discountType) =>
+              discountsById.Values
+              .Where(d => d.DiscountType == discountType)
+              .Select(d => d.Id)
+              .ToArray();
+
+            // SQL server has a max limit of elements in an IN query, so we need to filter locally
+            var discountedProductIds = products
+              .Where(p => p.HasDiscountsApplied)
+              .Select(p => p.Id)
+              .ToHashSet();
+            var discountProductMappings =
+              from discountId in getDiscountIdsByType(DiscountType.AssignedToSkus)
+              join dpm in _discountProductMappingRepository.Table
+                on discountId equals dpm.DiscountId
+              select new { pid = dpm.EntityId, discountId };
+
+            foreach (var dpm in discountProductMappings.ToArray().Where(x => discountedProductIds.Contains(x.pid)))
+                add(dpm.pid, dpm.discountId);
+
+            var discountManufacturerMappings =
+              (from discountId in getDiscountIdsByType(DiscountType.AssignedToManufacturers)
+               join dmm in _discountManufacturerMappingRepository.Table
+                 on discountId equals dmm.DiscountId
+               select new { mid = dmm.EntityId, discountId })
+              .ToArray();
+            var productManufacturers = await Task.WhenAll(discountManufacturerMappings.Select(
+              dmm => _manufacturerService.GetProductManufacturersByManufacturerIdAsync(dmm.mid, showHidden: true)));
+            var productDiscountPairs = productManufacturers
+              .Zip(discountManufacturerMappings)
+              .SelectMany(z => z.First.Select(pm => (pm.ProductId, z.Second.discountId)));
+            foreach (var (ProductId, discount) in productDiscountPairs)
+                add(ProductId, discount);
+
+            var discountCategoryMappings =
+              (from discountId in getDiscountIdsByType(DiscountType.AssignedToCategories)
+               join dcm in _discountCategoryMappingRepository.Table
+                on discountId equals dcm.DiscountId
+               select new { cid = dcm.EntityId, discountId })
+              .ToArray();
+            var subCategories = await Task.WhenAll(discountCategoryMappings
+              .Where(dcm => discountsById.TryGetValue(dcm.discountId, out var discount) && discount.AppliedToSubCategories)
+              .Select(dcm => _categoryService.GetAllCategoriesByParentCategoryIdAsync(dcm.cid, showHidden: true)));
+            var applicableCategoryDiscountPairs = discountCategoryMappings
+              .Concat(subCategories
+                .Zip(discountCategoryMappings)
+                .SelectMany(z => z.First.Select(c => new { cid = c.Id, z.Second.discountId })));
+            var productCategoryDiscountMapping = await Task.WhenAll(applicableCategoryDiscountPairs.Select(
+              async cd => new
+              {
+                  productCategories = await _categoryService.GetProductCategoriesByCategoryIdAsync(cd.cid, showHidden: true),
+                  cd.discountId
+              }));
+            productDiscountPairs = productCategoryDiscountMapping.SelectMany(x => x.productCategories.Select(pc => (pc.ProductId, x.discountId)));
+            foreach (var (ProductId, discount) in productDiscountPairs)
+                add(ProductId, discount);
+
+            var orderDiscounts = discountsById.Values
+              .Where(d => d.DiscountType == DiscountType.AssignedToOrderTotal || d.DiscountType == DiscountType.AssignedToOrderSubTotal)
+              .ToArray();
+
+            return discountsByProduct.ToDictionary(
+              kv => kv.Key,
+              kv => kv.Value.Concat(orderDiscounts).ToArray()
+            );
+        }
+
+        private async Task<IDictionary<string, float>> GetAppliedDiscounts(IDictionary<int, int[]> discountsByProduct, int periodLength)
+        {
+            var productsById = new Dictionary<int, Product>(discountsByProduct.Count);
+            var batchSize = 1000;
+            for (var offset = 0; offset < discountsByProduct.Count; offset += batchSize)
+            {
+                var batch = discountsByProduct.Keys.Skip(offset).Take(batchSize).ToArray();
+                foreach (var product in await _productService.GetProductsByIdsAsync(batch))
+                    productsById.Add(product.Id, product);
+            }
+            var discountsById = (await _discountService
+              .GetAllDiscountsAsync(showHidden: true))
+              .ToDictionary(d => d.Id);
+            var (fromUtc, untilUtc) = GetPeriod(periodLength);
+            float coverage(Discount discount)
+            {
+                var startDiff = discount.StartDateUtc.HasValue
+                  ? Math.Max((discount.StartDateUtc.Value - fromUtc).TotalDays, 0)
+                  : 0;
+                var endDiff = discount.EndDateUtc.HasValue
+                  ? Math.Max((untilUtc - discount.EndDateUtc.Value).TotalDays, 0)
+                  : 0;
+                return 1 - (float)(startDiff + endDiff) / periodLength;
+            }
+            return discountsByProduct
+              .Select(async kv =>
+              {
+                  var price = productsById.GetValueOrDefault(kv.Key)?.Price ?? 0;
+                  if (price == 0)
+                      return (pid: kv.Key, discount: 0m);
+
+            var preferredDiscount = await _discountService.GetPreferredDiscountAsync(kv.Value.Select(discountsById.GetValueOrDefault).ToList(), price);
+                  var appliedDiscounts = preferredDiscount.PreferredDiscounts;
+                  var discountAmount = preferredDiscount.DiscountAmount;
+
+                  var avgCoverage = appliedDiscounts.Count > 0 ? (decimal)appliedDiscounts.Select(coverage).Average() : 0;
+                  return (pid: kv.Key, discount: avgCoverage * discountAmount / price);
+              }).Select(x => x.Result)
+              .Where(t => t.discount != 0)
+              .ToDictionary(
+                t => t.pid.ToString(),
+                t => (float)t.discount
+              );
+        }
+
+        private async Task<IList<Product>> GetProductsFromSearch(ProductSearchModel productSearchModel)
+        {
+            var categoryIds = new List<int>();
+            if (productSearchModel.SearchCategoryId > 0)
+            {
+                categoryIds.Add(productSearchModel.SearchCategoryId);
+
+                if (productSearchModel.SearchIncludeSubCategories)
+                {
+                    var childCategoryIds = await _categoryService.GetChildCategoryIdsAsync(parentCategoryId: productSearchModel.SearchCategoryId, showHidden: false);
+                    categoryIds.AddRange(childCategoryIds);
+                }
+            }
+
+            bool? overridePublished = null;
+            if (productSearchModel.SearchPublishedId > 0)
+            {
+                if (productSearchModel.SearchPublishedId == 1)
+                    overridePublished = true;
+                else if (productSearchModel.SearchPublishedId == 2)
+                    overridePublished = false;
+            }
+
+            return await _productService.SearchProductsAsync(
+                showHidden: true,
+                categoryIds: categoryIds,
+                manufacturerIds: new List<int> { productSearchModel.SearchManufacturerId },
+                storeId: productSearchModel.SearchStoreId,
+                productType: productSearchModel.SearchProductTypeId > 0 ? (ProductType?)productSearchModel.SearchProductTypeId : null,
+                keywords: productSearchModel.SearchProductName,
+                pageIndex: 0, pageSize: int.MaxValue,
+                overridePublished: overridePublished);
+        }
+
+        private static (DateTime fromUtc, DateTime untilUtc) GetPeriod(int periodLength)
+        {
+            var startDate = DateTime.Today.AddDays(1).ToUniversalTime();
+            return (startDate, startDate + TimeSpan.FromDays(periodLength));
+        }
     }
-
-    private static (DateTime fromUtc, DateTime untilUtc) GetPeriod(int periodLength)
-    {
-      var startDate = DateTime.Today.AddDays(1).ToUniversalTime();
-      return (startDate, startDate + TimeSpan.FromDays(periodLength));
-    }
-  }
 }
