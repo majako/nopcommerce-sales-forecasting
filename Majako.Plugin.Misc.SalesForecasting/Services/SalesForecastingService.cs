@@ -416,12 +416,10 @@ namespace Majako.Plugin.Misc.SalesForecasting.Services
                   var price = productsById.GetValueOrDefault(kv.Key)?.Price ?? 0;
                   if (price == 0)
                       return (pid: kv.Key, discount: 0m);
+                  var discountAmount = decimal.Zero;
+                  var preferredDiscount = _discountService.GetPreferredDiscount(kv.Value.Select(discountsById.GetValueOrDefault).ToList(), price, out discountAmount);
 
-            var preferredDiscount = await _discountService.GetPreferredDiscountAsync(kv.Value.Select(discountsById.GetValueOrDefault).ToList(), price);
-                  var appliedDiscounts = preferredDiscount.PreferredDiscounts;
-                  var discountAmount = preferredDiscount.DiscountAmount;
-
-                  var avgCoverage = appliedDiscounts.Count > 0 ? (decimal)appliedDiscounts.Select(coverage).Average() : 0;
+                  var avgCoverage = preferredDiscount.Count > 0 ? (decimal)preferredDiscount.Select(coverage).Average() : 0;
                   return (pid: kv.Key, discount: avgCoverage * discountAmount / price);
               }).Select(x => x.Result)
               .Where(t => t.discount != 0)
