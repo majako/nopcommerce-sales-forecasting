@@ -135,6 +135,39 @@ jobs:
       - name: '[4.5] Remove temp nopCommerce folder'
         run: rm -rf ${{ github.workspace }}/nopCommerce
       
+    ####### 4.6 #######
+      
+      - name: '[4.6] Clone nopCommerce'
+        uses: actions/checkout@v2
+        with:
+          repository: 'nopSolutions/nopCommerce'
+          ref: 'release-4.60.0'
+          path: ${{ github.workspace }}/nopCommerce
+        
+      - name: '[4.6] Clone Misc.SalesForecasting'
+        uses: actions/checkout@v2
+        with:
+          repository: majako/nopcommerce-sales-forecasting
+          ref: '4.6'
+          path: ${{ github.workspace }}/nopCommerce/src/Plugins/Misc.SalesForecasting
+          
+      - name: '[4.6] Install dotnet'
+        uses: actions/setup-dotnet@v1.8.1
+        with:
+          dotnet-version: 7.0.x
+            
+      - name: '[4.6] Build plugin'
+        run: dotnet build ${{ github.workspace }}/nopCommerce/src/Plugins/Misc.SalesForecasting/Majako.Plugin.Misc.SalesForecasting.csproj -c Release
+      
+      - name: '[4.6] Remove runtimes folder'
+        run: rm -rf ${{ github.workspace }}/nopCommerce/src/Presentation/Nop.Web/Plugins/Misc.SalesForecasting/runtimes
+        
+      - name: '[4.6] Copy plugin to artifact'
+        run: mkdir -p ${{ github.workspace }}/artifact/Majako.SalesForecasting/v4.6 && cp -r ${{ github.workspace }}/nopCommerce/src/Presentation/Nop.Web/Plugins/Misc.SalesForecasting ${{ github.workspace }}/artifact/Majako.SalesForecasting/v4.6/Misc.SalesForecasting
+        
+      - name: '[4.6] Remove temp nopCommerce folder'
+        run: rm -rf ${{ github.workspace }}/nopCommerce
+      
    ####### all #######
       
       - name: Write to plugins.json
@@ -164,6 +197,12 @@ jobs:
                         {
                           "Type": "Plugin",
                           "SupportedVersion": "4.50",
+                          "DirectoryPath": "Majako.SalesForecasting/v4.5/Misc.SalesForecasting/",
+                          "SystemName": "Misc.SalesForecasting"
+                        },
+                        {
+                          "Type": "Plugin",
+                          "SupportedVersion": "4.60",
                           "DirectoryPath": "Majako.SalesForecasting/v4.5/Misc.SalesForecasting/",
                           "SystemName": "Misc.SalesForecasting"
                         }
