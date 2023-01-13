@@ -124,7 +124,7 @@ jobs:
           dotnet-version: 6.0.x
             
       - name: '[4.5] Build plugin'
-        run: dotnet build ${{ github.workspace }}/nopCommerce/src/Plugins/Misc.SalesForecasting/Majako.Plugin.Misc.SalesForecasting.csproj -c Release
+        run: dotnet build ${{ github.workspace }}/nopCommerce/src/Plugins/Misc.SalesForecasting/Majako.Plugin.Misc.SalesForecasting/Majako.Plugin.Misc.SalesForecasting.csproj -c Release
       
       - name: '[4.5] Remove runtimes folder'
         run: rm -rf ${{ github.workspace }}/nopCommerce/src/Presentation/Nop.Web/Plugins/Misc.SalesForecasting/runtimes
@@ -157,7 +157,7 @@ jobs:
           dotnet-version: 7.0.x
             
       - name: '[4.6] Build plugin'
-        run: dotnet build ${{ github.workspace }}/nopCommerce/src/Plugins/Misc.SalesForecasting/Majako.Plugin.Misc.SalesForecasting.csproj -c Release
+        run: dotnet build ${{ github.workspace }}/nopCommerce/src/Plugins/Misc.SalesForecasting/Majako.Plugin.Misc.SalesForecasting/Majako.Plugin.Misc.SalesForecasting.csproj -c Release
       
       - name: '[4.6] Remove runtimes folder'
         run: rm -rf ${{ github.workspace }}/nopCommerce/src/Presentation/Nop.Web/Plugins/Misc.SalesForecasting/runtimes
@@ -203,7 +203,7 @@ jobs:
                         {
                           "Type": "Plugin",
                           "SupportedVersion": "4.60",
-                          "DirectoryPath": "Majako.SalesForecasting/v4.5/Misc.SalesForecasting/",
+                          "DirectoryPath": "Majako.SalesForecasting/v4.6/Misc.SalesForecasting/",
                           "SystemName": "Misc.SalesForecasting"
                         }
                       ]
