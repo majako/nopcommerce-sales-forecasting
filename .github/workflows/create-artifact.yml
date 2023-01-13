@@ -116,7 +116,7 @@ jobs:
         with:
           repository: majako/nopcommerce-sales-forecasting
           ref: '4.5'
-          path: ${{ github.workspace }}/nopCommerce/src/Plugins/Misc.SalesForecasting
+          path: ${{ github.workspace }}/nopCommerce/src/Plugins.SalesForecasting
           
       - name: '[4.5] Install dotnet'
         uses: actions/setup-dotnet@v1.8.1
@@ -124,7 +124,7 @@ jobs:
           dotnet-version: 6.0.x
             
       - name: '[4.5] Build plugin'
-        run: dotnet build ${{ github.workspace }}/nopCommerce/src/Plugins/Misc.SalesForecasting/Majako.Plugin.Misc.SalesForecasting/Majako.Plugin.Misc.SalesForecasting.csproj -c Release
+        run: dotnet build ${{ github.workspace }}/nopCommerce/src/Plugins.SalesForecasting/Majako.Plugin.Misc.SalesForecasting/Majako.Plugin.Misc.SalesForecasting.csproj -c Release
       
       - name: '[4.5] Remove runtimes folder'
         run: rm -rf ${{ github.workspace }}/nopCommerce/src/Presentation/Nop.Web/Plugins/Misc.SalesForecasting/runtimes
@@ -149,7 +149,7 @@ jobs:
         with:
           repository: majako/nopcommerce-sales-forecasting
           ref: '4.6'
-          path: ${{ github.workspace }}/nopCommerce/src/Plugins/Misc.SalesForecasting
+          path: ${{ github.workspace }}/nopCommerce/src/Plugins.SalesForecasting
           
       - name: '[4.6] Install dotnet'
         uses: actions/setup-dotnet@v1.8.1
@@ -157,7 +157,7 @@ jobs:
           dotnet-version: 7.0.x
             
       - name: '[4.6] Build plugin'
-        run: dotnet build ${{ github.workspace }}/nopCommerce/src/Plugins/Misc.SalesForecasting/Majako.Plugin.Misc.SalesForecasting/Majako.Plugin.Misc.SalesForecasting.csproj -c Release
+        run: dotnet build ${{ github.workspace }}/nopCommerce/src/Plugins.SalesForecasting/Majako.Plugin.Misc.SalesForecasting/Majako.Plugin.Misc.SalesForecasting.csproj -c Release
       
       - name: '[4.6] Remove runtimes folder'
         run: rm -rf ${{ github.workspace }}/nopCommerce/src/Presentation/Nop.Web/Plugins/Misc.SalesForecasting/runtimes
