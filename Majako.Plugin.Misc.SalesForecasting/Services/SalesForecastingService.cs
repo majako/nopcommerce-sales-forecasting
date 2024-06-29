@@ -9,7 +9,8 @@ using System.Net.Http.Headers;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-using Majako.Plugin.Misc.SalesForecasting.Models;
+using Majako.Services.Models;
+using Majako.Services.Services;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Serialization;
 using Nop.Core;
@@ -23,11 +24,10 @@ using Nop.Services.Configuration;
 using Nop.Services.Discounts;
 using Nop.Services.Localization;
 using Nop.Services.Messages;
-using Nop.Web.Areas.Admin.Models.Catalog;
 
 namespace Majako.Plugin.Misc.SalesForecasting.Services
 {
-    public class SalesForecastingService
+    public class SalesForecastingService : ISalesForecastingService
     {
         private class ForecastRequest
         {
@@ -121,6 +121,8 @@ namespace Majako.Plugin.Misc.SalesForecasting.Services
 
         public async Task SubmitForecastAsync(ForecastSubmissionModel model)
         {
+            if(model.DiscountsByProduct is null) return;
+
             var settings = await _settingService.LoadSettingAsync<SalesForecastingPluginSettings>();
             var discountsByProduct = new Dictionary<int, int[]>(model.DiscountsByProduct);
             var data = GetData(discountsByProduct.Keys.ToArray());
@@ -165,7 +167,7 @@ namespace Majako.Plugin.Misc.SalesForecasting.Services
             _ = PollForecastAsync(_pollingCancellationTokenSource.Token);
         }
 
-        public async Task<PreliminaryForecastModel> GetPreliminaryData(ForecastSearchModel searchModel)
+        public async Task<PreliminaryForecastModel> GetPreliminaryData(ForecastProductSearchModel searchModel)
         {
             var products = await GetProductsFromSearch(searchModel);
             var (fromUtc, untilUtc) = GetPeriod(searchModel.PeriodLength);
@@ -183,7 +185,7 @@ namespace Majako.Plugin.Misc.SalesForecasting.Services
             };
         }
 
-        public async Task<IEnumerable<ForecastResponse>> GetForecastAsync()
+        public async Task<IEnumerable<ForecastResponseModel>> GetForecastAsync()
         {
             var settings = await _settingService.LoadSettingAsync<SalesForecastingPluginSettings>();
             if (string.IsNullOrEmpty(settings.ForecastId))
@@ -197,13 +199,13 @@ namespace Majako.Plugin.Misc.SalesForecasting.Services
             var predictions = content.Data.Predictions.ToDictionary(p => p.ProductId);
 
             var searchModelJson = await DecompressAsync(settings.SearchModelJsonGzip);
-            var searchModel = JsonConvert.DeserializeObject<ForecastSearchModel>(searchModelJson);
+            var searchModel = JsonConvert.DeserializeObject<ForecastProductSearchModel>(searchModelJson);
 
             return (await GetProductsFromSearch(searchModel))
               .Select(p =>
                 predictions.TryGetValue(p.Id.ToString(), out var prediction)
-                  ? new ForecastResponse(p, prediction.Quantity, prediction.Quantiles)
-                  : new ForecastResponse(p, 0, null)
+                  ? new ForecastResponseModel(p, prediction.Quantity, prediction.Quantiles)
+                  : new ForecastResponseModel(p, 0, null)
                 );
         }
 
@@ -233,7 +235,7 @@ namespace Majako.Plugin.Misc.SalesForecasting.Services
             });
         }
 
-        public async Task<IEnumerable<Sale>> GetDataAsync(ProductSearchModel productSearchModel)
+        public async Task<IEnumerable<Sale>> GetDataAsync(ForecastProductSearchModel productSearchModel)
         {
             return GetData(
               (await GetProductsFromSearch(productSearchModel))
@@ -431,7 +433,7 @@ namespace Majako.Plugin.Misc.SalesForecasting.Services
               );
         }
 
-        private async Task<IList<Product>> GetProductsFromSearch(ProductSearchModel productSearchModel)
+        private async Task<IList<Product>> GetProductsFromSearch(ForecastProductSearchModel productSearchModel)
         {
             var categoryIds = new List<int>();
             if (productSearchModel.SearchCategoryId > 0)

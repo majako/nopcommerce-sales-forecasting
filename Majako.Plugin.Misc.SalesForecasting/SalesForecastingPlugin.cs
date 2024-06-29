@@ -66,11 +66,12 @@ namespace Majako.Plugin.Misc.SalesForecasting
     {
       var settings = await _settingService.LoadSettingAsync<SalesForecastingPluginSettings>();
       var settingsTask = _settingService.SaveSettingAsync(settings);
-      await Task.WhenAll(await GetLocalizationsAsync().Select(async t =>
-      {
-        using var streamReader = t.file.OpenText();
-        await _localizationService.ImportResourcesFromXmlAsync(t.language, streamReader);
-      }).ToArrayAsync());
+      //Rickard: can you check commented code, it run forever.
+      //await Task.WhenAll(await GetLocalizationsAsync().Select(async t =>
+      //{
+      //  using var streamReader = t.file.OpenText();
+      //  await _localizationService.ImportResourcesFromXmlAsync(t.language, streamReader);
+      //}).ToArrayAsync());
       await settingsTask;
       await base.InstallAsync();
     }
